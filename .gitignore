@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .cli-dist/
+.worktrees/
 batch_output/
 .netlify/
 .DS_Store
