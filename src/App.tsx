@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ApiKeyPanel } from './components/ApiKeyPanel';
 import { FileUpload } from './components/FileUpload';
 import { InstructorPanel } from './components/InstructorPanel';
@@ -29,18 +29,27 @@ const appVersion = __APP_VERSION__;
 export default function App() {
   const [appState, setAppState] = useState(() => createAppState());
   const [provider, setProvider] = useState<AiProvider>(() => readSessionProvider());
+  const [isAiAssistanceExpanded, setIsAiAssistanceExpanded] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(() => {
     const savedProvider = readSessionProvider();
     const savedApiKey = readSessionApiKey(savedProvider);
     return savedApiKey === '' ? null : savedApiKey;
   });
   const reviewSlice = getReviewSlice(appState.draft);
+  const unresolvedFieldCount = reviewSlice.reviewState.unresolvedFields.length;
   const termOptions = getTermOptions();
   const generationFileName = buildAbetSyllabusFileName(
     appState.draft.generationMetadata.termCode,
     appState.draft.courseIdentity.courseNumber,
   );
   const hasUploadedSource = appState.sourceFileName !== null;
+  const canOfferAiAssistance = hasUploadedSource && unresolvedFieldCount > 0;
+
+  useEffect(() => {
+    if (!canOfferAiAssistance) {
+      setIsAiAssistanceExpanded(false);
+    }
+  }, [canOfferAiAssistance]);
 
   return (
     <main className="app-shell">
@@ -84,31 +93,56 @@ export default function App() {
             canGenerate={reviewSlice.reviewState.canGenerate}
             fileName={generationFileName}
             sourceFileName={appState.sourceFileName ?? ''}
-            openFieldCount={reviewSlice.reviewState.unresolvedFields.length}
+            openFieldCount={unresolvedFieldCount}
           />
         </>
       ) : null}
 
-      <ApiKeyPanel
-        onProviderChange={(nextProvider) => {
-          setProvider(nextProvider);
-          const restoredKey = readSessionApiKey(nextProvider);
-          setApiKey(restoredKey === '' ? null : restoredKey);
-        }}
-        onApiKeyChange={setApiKey}
-      />
+      {canOfferAiAssistance ? (
+        <>
+          <section className="ai-assist-panel" aria-labelledby="ai-assist-panel-title">
+            <div className="section-heading">
+              <div>
+                <h2 id="ai-assist-panel-title">AI Assistance</h2>
+                <p>Use optional AI help to prefill unresolved fields for review.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAiAssistanceExpanded((current) => !current);
+                }}
+              >
+                {isAiAssistanceExpanded ? 'Hide AI Assistance' : 'Use AI Assistance'}
+              </button>
+            </div>
+          </section>
 
-      <SuggestionsPanel
-        provider={provider ?? OPENAI_PROVIDER}
-        apiKey={apiKey}
-        extractedText={appState.extractedText}
-        unresolvedFields={reviewSlice.reviewState.unresolvedFields}
-        onApply={(suggestions) => {
-          setAppState((current) => applyFieldSuggestions(current, suggestions));
-        }}
-      />
+          {isAiAssistanceExpanded ? (
+            <>
+              <ApiKeyPanel
+                onProviderChange={(nextProvider) => {
+                  setProvider(nextProvider);
+                  const restoredKey = readSessionApiKey(nextProvider);
+                  setApiKey(restoredKey === '' ? null : restoredKey);
+                }}
+                onApiKeyChange={setApiKey}
+              />
 
-      {reviewSlice.reviewState.unresolvedFields.length > 0 ? (
+              <SuggestionsPanel
+                provider={provider ?? OPENAI_PROVIDER}
+                apiKey={apiKey}
+                extractedText={appState.extractedText}
+                unresolvedFields={reviewSlice.reviewState.unresolvedFields}
+                onApply={(suggestions) => {
+                  setAppState((current) => applyFieldSuggestions(current, suggestions));
+                }}
+              />
+            </>
+          ) : null}
+        </>
+      ) : null}
+
+      {unresolvedFieldCount > 0 ? (
         <section className="review-panel" aria-labelledby="review-panel-title">
           <div className="section-heading">
             <div>
@@ -118,7 +152,7 @@ export default function App() {
               </p>
             </div>
             <span className="review-panel__count">
-              {reviewSlice.reviewState.unresolvedFields.length} open
+              {unresolvedFieldCount} open
             </span>
           </div>
 

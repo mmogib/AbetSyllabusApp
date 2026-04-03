@@ -18,17 +18,13 @@ test('renders the beta shell title and subtitle', () => {
     screen.getByText('Upload a course specification file to detect syllabus information.'),
   ).toBeInTheDocument();
   expect(
-    screen.getByText('Use optional AI assistance to fill unresolved fields.'),
-  ).toBeInTheDocument();
-  expect(
     screen.getByText('Complete any required information not resolved automatically.'),
   ).toBeInTheDocument();
   expect(
     screen.getByText('Export or import a working draft as a local JSON file.'),
   ).toBeInTheDocument();
-  expect(
-    screen.getByText('Save an optional AI provider key in this browser session for suggestion support.'),
-  ).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'AI Provider & API Key' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'AI Provider & API Key' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'AI Suggestions' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Use AI Assistance' })).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Review status')).not.toBeInTheDocument();
 });

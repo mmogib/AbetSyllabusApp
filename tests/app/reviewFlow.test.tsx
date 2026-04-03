@@ -128,6 +128,8 @@ test('applies ai suggestions into the unresolved review flow', async () => {
     target: { files: [file] },
   });
 
+  fireEvent.click(await screen.findByRole('button', { name: 'Use AI Assistance' }));
+
   await waitFor(() => {
     expect(screen.getByRole('button', { name: 'Suggest with AI' })).toBeEnabled();
   });
@@ -186,6 +188,8 @@ test('applies openrouter ai suggestions into the unresolved review flow', async 
   fireEvent.change(screen.getByLabelText('Source file'), {
     target: { files: [file] },
   });
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Use AI Assistance' }));
 
   await waitFor(() => {
     expect(screen.getByRole('button', { name: 'Suggest with AI' })).toBeEnabled();

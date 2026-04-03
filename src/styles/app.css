@@ -61,6 +61,7 @@ body {
 }
 
 .review-panel,
+.ai-assist-panel,
 .summary-panel,
 .api-key-panel,
 .suggestions-panel,
@@ -179,6 +180,7 @@ body {
 
 .api-key-panel,
 .suggestions-panel,
+.ai-assist-panel,
 .project-panel,
 .instructor-panel,
 .term-panel,

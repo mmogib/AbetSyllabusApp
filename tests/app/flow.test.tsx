@@ -6,7 +6,7 @@ test('shows the end-to-end beta workflow and parses an uploaded source file', as
 
   expect(screen.getByRole('heading', { name: 'Term' })).toBeInTheDocument();
   expect(screen.getByText('Upload Source File')).toBeInTheDocument();
-  expect(screen.getByText('AI Provider & API Key')).toBeInTheDocument();
+  expect(screen.queryByText('AI Provider & API Key')).not.toBeInTheDocument();
   expect(screen.getByText('Missing Fields Review')).toBeInTheDocument();
   expect(screen.getByText('Project')).toBeInTheDocument();
   expect(screen.queryByLabelText('Review status')).not.toBeInTheDocument();
@@ -32,6 +32,7 @@ test('shows the end-to-end beta workflow and parses an uploaded source file', as
   await waitFor(() => {
     expect(screen.getAllByText('2 open').length).toBeGreaterThan(0);
   });
+  expect(screen.getByRole('button', { name: 'Use AI Assistance' })).toBeInTheDocument();
   expect(
     screen.getByText('Loaded course-spec.txt. Review any remaining missing fields below.'),
   ).toBeInTheDocument();
@@ -70,4 +71,5 @@ test('hides the missing fields review panel when the uploaded draft is already c
   });
 
   expect(screen.queryByRole('heading', { name: 'Missing Fields Review' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Use AI Assistance' })).not.toBeInTheDocument();
 });
