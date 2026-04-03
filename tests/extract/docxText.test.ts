@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { extractDocxText } from '../../src/lib/extract/docxText';
+import { extractDocxTextFromDocumentXml } from '../../src/lib/extract/docxTextCore';
 
 async function buildDocxFile(documentXml: string): Promise<File> {
   const zip = new JSZip();
@@ -48,5 +49,24 @@ test('preserves paragraph boundaries while extracting docx text', async () => {
       '1. List Required Textbooks',
       'Introduction to Probability for Data Science',
     ].join('\n'),
+  );
+});
+
+test('extracts paragraph text directly from document xml with an injected parser', () => {
+  const text = extractDocxTextFromDocumentXml(
+    [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">',
+      '<w:body>',
+      '<w:p><w:r><w:t>Course Title: Probability for Data Science</w:t></w:r></w:p>',
+      '<w:p><w:r><w:t>Course Code: DATA 201</w:t></w:r></w:p>',
+      '</w:body>',
+      '</w:document>',
+    ].join(''),
+    new DOMParser(),
+  );
+
+  expect(text).toBe(
+    ['Course Title: Probability for Data Science', 'Course Code: DATA 201'].join('\n'),
   );
 });

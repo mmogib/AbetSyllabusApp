@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added a deterministic local batch CLI for backlog processing.
+- Reused shared browser/Node extraction and DOCX generation cores so the batch path and web app stay aligned.
+- Added `report.csv` and `report.json` outputs plus `success/` and `review/` folders for batch runs.
+- Added Node-side PDF worker bootstrapping so batch PDF extraction works against the current sample corpus.
+
 ## 0.1.0 - 2026-04-03
 
 - First public beta release.

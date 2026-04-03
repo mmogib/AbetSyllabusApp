@@ -11,23 +11,26 @@ Date: 2026-04-03
 - Switched the output generator to `output_template/ABETSyllabusTemplate2.docx`.
 - Adjusted DOCX generation so template-native numbering and bullets are preserved.
 - Hid the non-functional project export/import panel from the public beta UI while keeping the code in place.
+- Added a deterministic local batch CLI for backlog processing.
 - Published the repo at `https://github.com/mmogib/AbetSyllabusApp`.
 - Published the live beta at `https://abet-syllabus-app.netlify.app`.
 
 ## Verified State
 
-- `npm test` current known passing state: `63/63`
+- `npm test` current known passing state: pending final verification after the batch CLI merge
 - `npm run typecheck` current known passing state: PASS
 - `npx vite build --emptyOutDir false` current known passing state: PASS
+- `npm run batch -- --input ./input_samples --output ./batch_output` current known passing state: `8 success / 0 needs_review / 0 failed`
 
 ## Current Product Truth
 
 This is now a public-beta candidate, not just a prototype. It is suitable for friend-level testing and feedback, but parser coverage is still rule-based and should be treated as actively improving rather than complete.
 The project export/import feature still exists in code, but it is intentionally hidden from the current beta UI.
+There is now also a deterministic local batch CLI for backlog processing, with no AI usage in v1.
 
 ## Highest Priority Next Step
 
-Use friend testing to gather concrete failures from new real files:
+Use friend testing and backlog batch runs to gather concrete failures from new real files:
 
 - exact source file name
 - exact bad parsed value or generated DOCX text
@@ -44,7 +47,11 @@ Then patch the specific failure and add a regression test before changing unrela
 - `src/lib/llm/openaiSuggestions.ts`
 - `src/lib/term/academicTerms.ts`
 - `src/lib/docx/generateSyllabusDocx.ts`
+- `src/cli/batchGenerate.ts`
+- `src/cli/batchGenerateCore.ts`
+- `src/cli/nodeAdapters.ts`
 - `tests/parse/courseSpecParser.test.ts`
 - `tests/extract/pdfText.test.ts`
 - `tests/docx/generateSyllabusDocx.test.ts`
+- `tests/cli/batchGenerate.test.ts`
 - `output_template/ABETSyllabusTemplate2.docx`

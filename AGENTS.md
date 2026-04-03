@@ -3,12 +3,14 @@
 ## Current Product Direction
 
 - Client-only static web app.
+- Companion local batch CLI for backlog processing.
 - No backend, no auth, no server storage.
 - Input: local `PDF`, `DOCX`, or `TXT`.
 - Deterministic extraction first.
 - Optional AI suggestions through browser-session API keys only.
 - Review unresolved or low-confidence fields before generation.
 - Primary output: in-browser generated `DOCX`.
+- Secondary output path: local batch CLI outputs to `success/`, `review/`, `report.csv`, and `report.json`.
 - Hidden for now: project export/import remains in code but is not exposed in the beta UI.
 
 ## Current Status
@@ -27,6 +29,7 @@ Working pieces:
 - optional AI suggestions with `OpenAI` or `OpenRouter`
 - term selection with generated filenames like `T252MATH101AbetSyllabus.docx`
 - DOCX generation using `output_template/ABETSyllabusTemplate2.docx`
+- deterministic batch CLI for folder processing with CSV/JSON reports and review artifacts
 
 Known limitations:
 - parsing is much better, but still rule-based and sample-sensitive
@@ -49,14 +52,15 @@ Recent stabilization work also included:
 - OpenRouter support alongside OpenAI in `src/lib/llm/openaiSuggestions.ts`
 - academic term utilities and filename generation in `src/lib/term/academicTerms.ts`
 - contextual AI panels and hidden project panel in `src/App.tsx`
+- shared browser/Node extraction and DOCX cores plus `src/cli/batchGenerate.ts`
 
 ## Current Priorities
 
 1. Run broader friend testing against additional real course files
 2. Collect exact field-level failures from new samples
 3. Patch extraction/parsing regressions with targeted tests
-4. Improve review/error messaging where failures are still confusing
-5. Publish the static app and keep the deployment path simple
+4. Use the batch CLI for backlog processing and inspect `report.csv` / `report.json`
+5. Improve review/error messaging where failures are still confusing
 
 ## Restart Instruction
 
@@ -67,3 +71,4 @@ When resuming, start with:
 3. Test any newly reported sample files in `input_samples/`
 4. Patch the exact extraction/parser failure before changing unrelated features
 5. Keep the DOCX output aligned with `ABETSyllabusTemplate2.docx`
+6. For backlog runs, use `npm run batch -- --input <dir> --output <dir>`

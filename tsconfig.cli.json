@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".cli-dist",
+    "rootDir": "src"
+  },
+  "include": [
+    "src/cli/**/*.ts",
+    "src/lib/docx/generateSyllabusDocxCore.ts",
+    "src/lib/extract/docxTextCore.ts",
+    "src/lib/extract/normalizeText.ts",
+    "src/lib/extract/pdfTextCore.ts",
+    "src/lib/parse/**/*.ts",
+    "src/lib/review/**/*.ts",
+    "src/lib/schema/**/*.ts",
+    "src/lib/term/**/*.ts",
+    "src/state/actions.ts",
+    "src/state/appState.ts",
+    "src/types/**/*.ts"
+  ]
+}

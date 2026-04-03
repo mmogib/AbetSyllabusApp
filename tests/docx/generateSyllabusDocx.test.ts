@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { vi } from 'vitest';
 import { generateSyllabusDocx } from '../../src/lib/docx/generateSyllabusDocx';
+import { buildSyllabusDocxBytes } from '../../src/lib/docx/generateSyllabusDocxCore';
 import { createEmptyDraft } from '../../src/lib/schema/defaultDraft';
 
 function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
@@ -170,6 +171,29 @@ async function buildTemplateBuffer(): Promise<ArrayBuffer> {
   const bytes = await zip.generateAsync({ type: 'uint8array' });
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
+
+test('builds syllabus docx bytes using injected xml adapters', async () => {
+  const templateBytes = await buildTemplateBuffer();
+  const draft = createEmptyDraft();
+  draft.courseIdentity.courseNumber = 'ICS 321';
+  draft.courseIdentity.courseTitle = 'Software Engineering I';
+
+  const bytes = await buildSyllabusDocxBytes({
+    draft,
+    templateBytes,
+    parseXml: (xml) => new DOMParser().parseFromString(xml, 'application/xml'),
+    serializeXml: (document) => new XMLSerializer().serializeToString(document),
+  });
+
+  const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const zip = await JSZip.loadAsync(buffer);
+  const documentFile = zip.file('word/document.xml');
+  const documentXml = documentFile ? await documentFile.async('string') : '';
+
+  expect(bytes.byteLength).toBeGreaterThan(0);
+  expect(documentXml).toContain('ICS 321');
+  expect(documentXml).toContain('Software Engineering I');
+});
 
 test('returns a DOCX blob with syllabus content in the template 2 layout', async () => {
   const templateBytes = await buildTemplateBuffer();

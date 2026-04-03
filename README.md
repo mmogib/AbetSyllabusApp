@@ -13,6 +13,7 @@ Current capabilities:
 - optionally request AI suggestions with `OpenAI` or `OpenRouter`
 - generate DOCX output using the departmental template in `output_template/ABETSyllabusTemplate2.docx`
 - generate filenames in the form `T252MATH101AbetSyllabus.docx`
+- batch-process folders of source files into `success/`, `review/`, `report.csv`, and `report.json`
 
 ## Product Constraints
 
@@ -42,6 +43,36 @@ Verification:
 npm test
 npm run build
 ```
+
+## Batch CLI
+
+Backlog processing is available through:
+
+```bash
+npm run batch -- --input ./input_samples --output ./batch_output
+```
+
+Behavior:
+- deterministic only in v1, with no AI calls
+- generates DOCX only for files whose required fields are fully resolved
+- copies review-needed source files into `review/`
+- writes both `report.csv` and `report.json`
+
+Output structure:
+
+```text
+batch_output/
+  success/
+  review/
+  report.csv
+  report.json
+```
+
+Optional flags:
+- `--term 252`
+- `--recursive false`
+- `--copy-review-sources false`
+- `--write-extracted-text false`
 
 ## Release Workflow
 
@@ -85,3 +116,4 @@ The fastest way to improve parser coverage is to test a real file, compare the p
 - Parser entry point: `src/lib/parse/courseSpecParser.ts`
 - PDF extraction entry point: `src/lib/extract/pdfText.ts`
 - DOCX generation entry point: `src/lib/docx/generateSyllabusDocx.ts`
+- Batch CLI entry point: `src/cli/batchGenerate.ts`
