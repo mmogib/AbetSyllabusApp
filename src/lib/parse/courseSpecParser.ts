@@ -1,6 +1,7 @@
 import { createEmptyDraft } from '../schema/defaultDraft';
 import {
   catalogDescriptionRule,
+  corequisitesRule,
   courseNumberRule,
   courseTitleRule,
   creditsRule,
@@ -458,6 +459,11 @@ export function parseCourseSpec(text: string): SyllabusDraft {
   draft.courseInformation.prerequisites = extractSectionValue(
     lines,
     prerequisitesRule.labels,
+    SIMPLE_SECTION_STOP_PATTERNS,
+  );
+  draft.courseInformation.corequisites = extractSectionValue(
+    lines,
+    corequisitesRule.labels,
     SIMPLE_SECTION_STOP_PATTERNS,
   );
   draft.courseInformation.designation = extractDesignation(lines);

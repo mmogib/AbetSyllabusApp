@@ -30,6 +30,7 @@ Working pieces:
 - term selection with generated filenames like `T252MATH101AbetSyllabus.docx`
 - DOCX generation using `output_template/ABETSyllabusTemplate2.docx`
 - deterministic batch CLI for folder processing with CSV/JSON reports and review artifacts
+- managed external CLI workspace plus central SQLite catalog for processing history and academic data
 
 Known limitations:
 - parsing is much better, but still rule-based and sample-sensitive
@@ -37,6 +38,7 @@ Known limitations:
 - AI suggestions run client-side, so provider keys are exposed to the browser session
 - there is still no backend persistence, collaboration, or audit trail
 - project export/import is not currently exposed in the public UI
+- SQLite support relies on Node's experimental `node:sqlite` module in the current environment
 
 ## Most Recent Delivery
 
@@ -53,13 +55,15 @@ Recent stabilization work also included:
 - academic term utilities and filename generation in `src/lib/term/academicTerms.ts`
 - contextual AI panels and hidden project panel in `src/App.tsx`
 - shared browser/Node extraction and DOCX cores plus `src/cli/batchGenerate.ts`
+- managed workspace handling in `src/cli/workspace.ts`
+- central catalog schema and persistence in `src/cli/catalogDb.ts`
 
 ## Current Priorities
 
 1. Run broader friend testing against additional real course files
 2. Collect exact field-level failures from new samples
 3. Patch extraction/parsing regressions with targeted tests
-4. Use the batch CLI for backlog processing and inspect `report.csv` / `report.json`
+4. Use the batch CLI with the managed workspace and inspect the SQLite catalog plus per-run reports
 5. Improve review/error messaging where failures are still confusing
 
 ## Restart Instruction
@@ -71,4 +75,4 @@ When resuming, start with:
 3. Test any newly reported sample files in `input_samples/`
 4. Patch the exact extraction/parser failure before changing unrelated features
 5. Keep the DOCX output aligned with `ABETSyllabusTemplate2.docx`
-6. For backlog runs, use `npm run batch -- --input <dir> --output <dir>`
+6. For backlog runs, use `npm run batch -- "<workspaceDir>" <MATH|AS|DATA>` or the direct Node CLI entry with `--workspace` and `--program`

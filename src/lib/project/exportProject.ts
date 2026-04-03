@@ -108,6 +108,7 @@ function sanitizeDraft(draft: SyllabusDraft): SyllabusDraft {
     courseInformation: {
       catalogDescription: stringValue(draft.courseInformation.catalogDescription),
       prerequisites: stringValue(draft.courseInformation.prerequisites),
+      corequisites: stringValue(draft.courseInformation.corequisites),
       designation: stringValue(draft.courseInformation.designation),
     },
     learningOutcomes: Array.isArray(draft.learningOutcomes)

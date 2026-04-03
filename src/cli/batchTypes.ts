@@ -1,4 +1,5 @@
 export type BatchFileStatus = 'success' | 'needs_review' | 'failed';
+export type ProgramCode = 'MATH' | 'AS' | 'DATA';
 
 export interface BatchRecord {
   sourceFile: string;
@@ -23,8 +24,11 @@ export interface BatchSummary {
 }
 
 export interface BatchOptions {
+  workspaceDir: string;
   inputDir: string;
   outputDir: string;
+  catalogDbPath: string;
+  programCode: ProgramCode;
   termCode?: string;
   recursive: boolean;
   copyReviewSources: boolean;

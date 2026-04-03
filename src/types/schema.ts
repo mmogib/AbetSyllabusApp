@@ -37,6 +37,7 @@ export interface Materials {
 export interface CourseInformation {
   catalogDescription: string;
   prerequisites: string;
+  corequisites: string;
   designation: string;
 }
 

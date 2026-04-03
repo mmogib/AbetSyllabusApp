@@ -1,7 +1,11 @@
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import type { BatchOptions } from './batchTypes';
 import { runBatchGenerate } from './batchGenerateCore';
+import { ensureCatalogSchema, openCatalogDb } from './catalogDb';
+import { importPloCatalog } from './ploCatalog';
+import { assertProgramCode } from './program';
+import { resolveWorkspace } from './workspace';
 import { extractSourceTextFromPath, generateDocxBytesForDraft } from './nodeAdapters';
 
 function readFlag(name: string): string | undefined {
@@ -24,18 +28,25 @@ function readBooleanFlag(name: string, defaultValue: boolean): boolean {
 
 function readOptions(): BatchOptions {
   const positionalArgs = process.argv.slice(2).filter((value) => !value.startsWith('--'));
-  const inputDir = readFlag('--input') ?? positionalArgs[0];
-  const outputDir = readFlag('--output') ?? positionalArgs[1];
+  const workspaceDir = readFlag('--workspace') ?? positionalArgs[0];
+  const programCode = assertProgramCode(readFlag('--program') ?? positionalArgs[1]);
 
-  if (!inputDir || !outputDir) {
+  if (!workspaceDir) {
     throw new Error(
-      'Usage: npm run batch -- --input <dir> --output <dir> [--term 252] [--recursive false] [--copy-review-sources false] [--write-extracted-text false]',
+      'Usage: npm run batch -- --workspace <dir> --program <MATH|AS|DATA> [--term 252] [--output <dir>] [--catalog-db <path>] [--recursive false] [--copy-review-sources false] [--write-extracted-text false]',
     );
   }
 
+  const resolvedWorkspaceDir = resolve(workspaceDir);
+
   return {
-    inputDir: resolve(inputDir),
-    outputDir: resolve(outputDir),
+    workspaceDir: resolvedWorkspaceDir,
+    inputDir: resolvedWorkspaceDir,
+    outputDir: readFlag('--output') ? resolve(readFlag('--output') as string) : '',
+    catalogDbPath: readFlag('--catalog-db')
+      ? resolve(readFlag('--catalog-db') as string)
+      : join(resolvedWorkspaceDir, 'catalog', 'abet_syllabus_catalog.sqlite'),
+    programCode,
     termCode: readFlag('--term'),
     recursive: readBooleanFlag('--recursive', true),
     copyReviewSources: readBooleanFlag('--copy-review-sources', true),
@@ -44,7 +55,39 @@ function readOptions(): BatchOptions {
 }
 
 async function main(): Promise<void> {
-  const options = readOptions();
+  const rawOptions = readOptions();
+  const workspace = await resolveWorkspace(rawOptions.workspaceDir);
+  const options: BatchOptions = {
+    ...rawOptions,
+    inputDir: workspace.inboxDir,
+    outputDir:
+      rawOptions.outputDir ||
+      join(workspace.runsDir, new Date().toISOString().replace(/[:.]/g, '-'), 'output'),
+    catalogDbPath: rawOptions.catalogDbPath || join(workspace.catalogDir, 'abet_syllabus_catalog.sqlite'),
+  };
+
+  const db = openCatalogDb(options.catalogDbPath);
+  ensureCatalogSchema(db);
+  try {
+    await importPloCatalog({
+      db,
+      ploDir: workspace.ploDir,
+      programCode: options.programCode,
+    });
+    await importPloCatalog({
+      db,
+      ploDir: workspace.inboxDir,
+      programCode: options.programCode,
+    });
+    await importPloCatalog({
+      db,
+      ploDir: workspace.rootDir,
+      programCode: options.programCode,
+    });
+  } finally {
+    db.close();
+  }
+
   const result = await runBatchGenerate(options, {
     extractSourceText: extractSourceTextFromPath,
     generateDocxBytes: generateDocxBytesForDraft,

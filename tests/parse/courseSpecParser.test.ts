@@ -86,6 +86,7 @@ None
     creditsText: '3-0-3',
     textbook: 'None',
   });
+  expect(draft.courseInformation.corequisites).toBe('');
 });
 
 test('extracts identity fields from the ENGL-style PDF layout', () => {
@@ -475,6 +476,7 @@ None
       durationText: '3.00',
     },
   ]);
+  expect(draft.courseInformation.corequisites).toBe('None');
 });
 
 test('stops supplemental materials before facilities section in DATA 201 style docx text', () => {

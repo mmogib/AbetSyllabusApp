@@ -34,6 +34,7 @@ export function createEmptyDraft(): SyllabusDraft {
     courseInformation: {
       catalogDescription: '',
       prerequisites: '',
+      corequisites: '',
       designation: '',
     },
     learningOutcomes: [],

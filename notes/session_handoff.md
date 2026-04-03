@@ -12,21 +12,24 @@ Date: 2026-04-03
 - Adjusted DOCX generation so template-native numbering and bullets are preserved.
 - Hid the non-functional project export/import panel from the public beta UI while keeping the code in place.
 - Added a deterministic local batch CLI for backlog processing.
+- Added a managed workspace flow and central SQLite catalog for the batch CLI.
 - Published the repo at `https://github.com/mmogib/AbetSyllabusApp`.
 - Published the live beta at `https://abet-syllabus-app.netlify.app`.
 
 ## Verified State
 
-- `npm test` current known passing state: pending final verification after the batch CLI merge
+- `npm test` current known passing state: PASS (`25 files`, `76 tests`)
 - `npm run typecheck` current known passing state: PASS
 - `npx vite build --emptyOutDir false` current known passing state: PASS
-- `npm run batch -- --input ./input_samples --output ./batch_output` current known passing state: `8 success / 0 needs_review / 0 failed`
+- `npm run batch -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" MATH` current known passing state: creates/updates the central catalog and a per-run output folder
+- `node .cli-dist/batchGenerate.cjs --workspace "<workspaceDir>" --program MATH` current known passing state: PASS after `npx vite build --config vite.cli.config.ts`
 
 ## Current Product Truth
 
 This is now a public-beta candidate, not just a prototype. It is suitable for friend-level testing and feedback, but parser coverage is still rule-based and should be treated as actively improving rather than complete.
 The project export/import feature still exists in code, but it is intentionally hidden from the current beta UI.
-There is now also a deterministic local batch CLI for backlog processing, with no AI usage in v1.
+There is now also a deterministic local batch CLI for backlog processing, with no AI usage in v1, a managed external workspace, and a central SQLite catalog.
+The managed workspace also normalizes detected PLO CSV files into `catalog/plo/`.
 
 ## Highest Priority Next Step
 
@@ -50,6 +53,9 @@ Then patch the specific failure and add a regression test before changing unrela
 - `src/cli/batchGenerate.ts`
 - `src/cli/batchGenerateCore.ts`
 - `src/cli/nodeAdapters.ts`
+- `src/cli/workspace.ts`
+- `src/cli/catalogDb.ts`
+- `src/cli/ploCatalog.ts`
 - `tests/parse/courseSpecParser.test.ts`
 - `tests/extract/pdfText.test.ts`
 - `tests/docx/generateSyllabusDocx.test.ts`

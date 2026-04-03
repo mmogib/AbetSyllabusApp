@@ -34,6 +34,10 @@ export const prerequisitesRule: ParsedFieldRule = {
   ],
 };
 
+export const corequisitesRule: ParsedFieldRule = {
+  labels: ['Course Co-requisites', 'Co-requisites for this course (if any)', 'Co-requisites'],
+};
+
 export const creditsRule: ParsedFieldRule = {
   labels: ['Course Credit Hours'],
 };

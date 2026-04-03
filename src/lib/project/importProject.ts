@@ -131,6 +131,10 @@ function parseDraft(value: unknown): SyllabusDraft {
     value.courseInformation.prerequisites,
     'courseInformation.prerequisites',
   );
+  draft.courseInformation.corequisites = asString(
+    value.courseInformation.corequisites ?? '',
+    'courseInformation.corequisites',
+  );
   draft.courseInformation.designation = asString(value.courseInformation.designation, 'courseInformation.designation');
 
   draft.learningOutcomes = value.learningOutcomes.map((item, index) => {

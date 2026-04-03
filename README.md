@@ -46,33 +46,63 @@ npm run build
 
 ## Batch CLI
 
-Backlog processing is available through:
+Backlog processing is available through a managed workspace:
 
 ```bash
-npm run batch -- --input ./input_samples --output ./batch_output
+npm run batch -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" MATH
+```
+
+Recommended runtime root:
+
+```text
+C:\Users\mmogi\Documents\AbetSyllabusData
 ```
 
 Behavior:
 - deterministic only in v1, with no AI calls
+- bootstraps or reuses a managed workspace rooted at the provided workspace path
+- normalizes detected PLO CSV files into `catalog/plo/`
+- imports program-specific PLO rows from CSV files for `MATH`, `AS`, or `DATA`
+- stores processing history and academic data in a central SQLite catalog
 - generates DOCX only for files whose required fields are fully resolved
-- copies review-needed source files into `review/`
-- writes both `report.csv` and `report.json`
+- copies review-needed source files into per-run `review/`
+- writes both `report.csv` and `report.json` for each run
 
 Output structure:
 
 ```text
-batch_output/
-  success/
-  review/
-  report.csv
-  report.json
+<workspace>/
+  catalog/
+    abet_syllabus_catalog.sqlite
+    plo/
+  inbox/
+  runs/
+    <timestamp>/
+      output/
+        success/
+        review/
+        report.csv
+        report.json
+  exports/
+  logs/
 ```
 
 Optional flags:
+- `--workspace <path>`
+- `--program <MATH|AS|DATA>`
+- `--catalog-db <path>`
+- `--output <path>`
 - `--term 252`
 - `--recursive false`
 - `--copy-review-sources false`
 - `--write-extracted-text false`
+
+For direct Node invocation after building the CLI bundle:
+
+```bash
+npx vite build --config vite.cli.config.ts
+node .cli-dist/batchGenerate.cjs --workspace "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" --program MATH
+```
 
 ## Release Workflow
 
@@ -117,3 +147,4 @@ The fastest way to improve parser coverage is to test a real file, compare the p
 - PDF extraction entry point: `src/lib/extract/pdfText.ts`
 - DOCX generation entry point: `src/lib/docx/generateSyllabusDocx.ts`
 - Batch CLI entry point: `src/cli/batchGenerate.ts`
+- SQLite catalog schema: `src/cli/catalogDb.ts`

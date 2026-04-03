@@ -1,6 +1,20 @@
-import { access, copyFile, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { access, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, extname, join, parse, relative } from 'node:path';
 
+import {
+  ensureCatalogSchema,
+  finishRun,
+  insertFileRun,
+  insertRun,
+  openCatalogDb,
+  replaceCourseClos,
+  replaceCourseCloPloMappings,
+  replaceCourseRequisites,
+  upsertCourse,
+  upsertCourseTerm,
+  upsertSourceFile,
+} from './catalogDb';
 import { parseCourseSpec } from '../lib/parse/courseSpecParser';
 import { buildReviewState } from '../lib/review/buildReviewState';
 import { buildAbetSyllabusFileName, getCurrentTermCode } from '../lib/term/academicTerms';
@@ -109,6 +123,22 @@ function createSummary(records: readonly BatchRecord[]): BatchSummary {
   );
 }
 
+async function getSourceFileMetadata(filePath: string): Promise<{
+  sourceExtension: string;
+  sizeBytes: number;
+  modifiedAt: string;
+  contentHash: string;
+}> {
+  const [fileStats, fileBytes] = await Promise.all([stat(filePath), readFile(filePath)]);
+
+  return {
+    sourceExtension: extname(filePath).toLowerCase(),
+    sizeBytes: fileStats.size,
+    modifiedAt: fileStats.mtime.toISOString(),
+    contentHash: createHash('sha256').update(fileBytes).digest('hex'),
+  };
+}
+
 export async function runBatchGenerate(
   options: BatchOptions,
   deps: BatchDependencies,
@@ -120,100 +150,223 @@ export async function runBatchGenerate(
   await ensureDirectory(successDir);
   await ensureDirectory(reviewDir);
 
+  const db = openCatalogDb(options.catalogDbPath);
+  ensureCatalogSchema(db);
+  const runId = insertRun(db, {
+    startedAt: (options.now ?? new Date()).toISOString(),
+    workspaceDir: options.workspaceDir,
+    inputDir: options.inputDir,
+    outputDir: options.outputDir,
+    catalogDbPath: options.catalogDbPath,
+    termCode,
+    programCode: options.programCode,
+    recursive: options.recursive,
+    copyReviewSources: options.copyReviewSources,
+    writeExtractedText: options.writeExtractedText,
+  });
+
   const discoveredFiles = await discoverFiles(options.inputDir, options.recursive);
   const records: BatchRecord[] = [];
 
-  for (const filePath of discoveredFiles) {
-    const sourceFile = basename(filePath);
-    const relativeSourcePath = relative(options.inputDir, filePath);
-    let extractedText = '';
-    let extractedTextFile = '';
+  try {
+    for (const filePath of discoveredFiles) {
+      const sourceFile = basename(filePath);
+      const relativeSourcePath = relative(options.inputDir, filePath);
+      let extractedText = '';
+      let extractedTextFile = '';
+      let reviewSourceFile = '';
 
-    try {
-      extractedText = await deps.extractSourceText(filePath);
-      const draft = toReviewDraft(extractedText, sourceFile, termCode);
-      const reviewState = buildReviewState(draft);
+      const sourceMetadata = await getSourceFileMetadata(filePath);
+      const sourceFileId = upsertSourceFile(db, {
+        sourcePath: filePath,
+        sourceName: sourceFile,
+        sourceExtension: sourceMetadata.sourceExtension,
+        sizeBytes: sourceMetadata.sizeBytes,
+        modifiedAt: sourceMetadata.modifiedAt,
+        contentHash: sourceMetadata.contentHash,
+      });
 
-      if (reviewState.canGenerate) {
-        const outputFileName = buildAbetSyllabusFileName(termCode, draft.courseIdentity.courseNumber);
-        const bytes = await deps.generateDocxBytes(draft);
-        const outputPath = await writeUniqueFile(successDir, outputFileName, bytes);
+      try {
+        extractedText = await deps.extractSourceText(filePath);
+        const draft = toReviewDraft(extractedText, sourceFile, termCode);
+        const reviewState = buildReviewState(draft);
+
+        const courseId = upsertCourse(db, {
+          department: draft.courseIdentity.department,
+          courseNumber: draft.courseIdentity.courseNumber,
+          courseTitle: draft.courseIdentity.courseTitle,
+          catalogDescription: draft.courseInformation.catalogDescription,
+        });
+
+        upsertCourseTerm(db, {
+          courseId,
+          termCode,
+          programCode: options.programCode,
+          coordinatorName: draft.courseIdentity.instructorName,
+          sourceFileId,
+        });
+
+        replaceCourseRequisites(db, {
+          courseId,
+          prerequisites: draft.courseInformation.prerequisites,
+          corequisites: draft.courseInformation.corequisites,
+        });
+
+        const courseCloRows = replaceCourseClos(db, {
+          courseId,
+          clos: draft.learningOutcomes,
+        });
+        replaceCourseCloPloMappings(db, {
+          courseCloRows,
+          programCode: options.programCode,
+        });
+
+        if (reviewState.canGenerate) {
+          const outputFileName = buildAbetSyllabusFileName(termCode, draft.courseIdentity.courseNumber);
+          const bytes = await deps.generateDocxBytes(draft);
+          const outputPath = await writeUniqueFile(successDir, outputFileName, bytes);
+          const outputFile = relative(options.outputDir, outputPath);
+
+          insertFileRun(db, {
+            runId,
+            sourceFileId,
+            status: 'success',
+            termCode,
+            programCode: options.programCode,
+            outputFile,
+            reviewSourceFile: '',
+            extractedTextFile: '',
+            errorMessage: '',
+            unresolvedFieldCount: 0,
+            unresolvedFields: [],
+            extractedText,
+            parsedDraft: draft,
+            reviewState,
+          });
+
+          records.push({
+            sourceFile,
+            relativeSourcePath,
+            status: 'success',
+            termCode,
+            courseNumber: draft.courseIdentity.courseNumber,
+            courseTitle: draft.courseIdentity.courseTitle,
+            outputFile,
+            unresolvedFieldCount: 0,
+            unresolvedFields: [],
+            extractedTextFile: '',
+            errorMessage: '',
+          });
+          continue;
+        }
+
+        if (options.copyReviewSources) {
+          const reviewSourcePath = await writeUniqueFile(reviewDir, sourceFile, await readFile(filePath));
+          reviewSourceFile = relative(options.outputDir, reviewSourcePath);
+        }
+        if (options.writeExtractedText) {
+          const extractedTextPath = await writeUniqueFile(
+            reviewDir,
+            `${parse(sourceFile).name}.extracted.txt`,
+            extractedText,
+          );
+          extractedTextFile = relative(options.outputDir, extractedTextPath);
+        }
+
+        insertFileRun(db, {
+          runId,
+          sourceFileId,
+          status: 'needs_review',
+          termCode,
+          programCode: options.programCode,
+          outputFile: '',
+          reviewSourceFile,
+          extractedTextFile,
+          errorMessage: '',
+          unresolvedFieldCount: reviewState.unresolvedFields.length,
+          unresolvedFields: [...reviewState.unresolvedFields],
+          extractedText,
+          parsedDraft: draft,
+          reviewState,
+        });
 
         records.push({
           sourceFile,
           relativeSourcePath,
-          status: 'success',
+          status: 'needs_review',
           termCode,
           courseNumber: draft.courseIdentity.courseNumber,
           courseTitle: draft.courseIdentity.courseTitle,
-          outputFile: relative(options.outputDir, outputPath),
-          unresolvedFieldCount: 0,
-          unresolvedFields: [],
-          extractedTextFile: '',
+          outputFile: '',
+          unresolvedFieldCount: reviewState.unresolvedFields.length,
+          unresolvedFields: [...reviewState.unresolvedFields],
+          extractedTextFile,
           errorMessage: '',
         });
-        continue;
-      }
+      } catch (error) {
+        if (options.copyReviewSources) {
+          const reviewSourcePath = await writeUniqueFile(reviewDir, sourceFile, await readFile(filePath));
+          reviewSourceFile = relative(options.outputDir, reviewSourcePath);
+        }
+        if (options.writeExtractedText && extractedText.trim() !== '') {
+          const extractedTextPath = await writeUniqueFile(
+            reviewDir,
+            `${parse(sourceFile).name}.extracted.txt`,
+            extractedText,
+          );
+          extractedTextFile = relative(options.outputDir, extractedTextPath);
+        }
 
-      if (options.copyReviewSources) {
-        await copyFile(filePath, join(reviewDir, sourceFile));
-      }
-      if (options.writeExtractedText) {
-        const extractedTextPath = await writeUniqueFile(
-          reviewDir,
-          `${parse(sourceFile).name}.extracted.txt`,
+        insertFileRun(db, {
+          runId,
+          sourceFileId,
+          status: 'failed',
+          termCode,
+          programCode: options.programCode,
+          outputFile: '',
+          reviewSourceFile,
+          extractedTextFile,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          unresolvedFieldCount: 0,
+          unresolvedFields: [],
           extractedText,
-        );
-        extractedTextFile = relative(options.outputDir, extractedTextPath);
-      }
+          parsedDraft: {},
+          reviewState: {},
+        });
 
-      records.push({
-        sourceFile,
-        relativeSourcePath,
-        status: 'needs_review',
-        termCode,
-        courseNumber: draft.courseIdentity.courseNumber,
-        courseTitle: draft.courseIdentity.courseTitle,
-        outputFile: '',
-        unresolvedFieldCount: reviewState.unresolvedFields.length,
-        unresolvedFields: [...reviewState.unresolvedFields],
-        extractedTextFile,
-        errorMessage: '',
-      });
-    } catch (error) {
-      if (options.copyReviewSources) {
-        await copyFile(filePath, join(reviewDir, sourceFile));
+        records.push({
+          sourceFile,
+          relativeSourcePath,
+          status: 'failed',
+          termCode,
+          courseNumber: '',
+          courseTitle: '',
+          outputFile: '',
+          unresolvedFieldCount: 0,
+          unresolvedFields: [],
+          extractedTextFile,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        });
       }
-      if (options.writeExtractedText && extractedText.trim() !== '') {
-        const extractedTextPath = await writeUniqueFile(
-          reviewDir,
-          `${parse(sourceFile).name}.extracted.txt`,
-          extractedText,
-        );
-        extractedTextFile = relative(options.outputDir, extractedTextPath);
-      }
-
-      records.push({
-        sourceFile,
-        relativeSourcePath,
-        status: 'failed',
-        termCode,
-        courseNumber: '',
-        courseTitle: '',
-        outputFile: '',
-        unresolvedFieldCount: 0,
-        unresolvedFields: [],
-        extractedTextFile,
-        errorMessage: error instanceof Error ? error.message : String(error),
-      });
     }
+
+    const summary = createSummary(records);
+    summary.totalDiscovered = discoveredFiles.length;
+
+    await writeFile(join(options.outputDir, 'report.csv'), buildCsvReport(records), 'utf8');
+    await writeFile(join(options.outputDir, 'report.json'), JSON.stringify(records, null, 2), 'utf8');
+    finishRun(db, {
+      runId,
+      finishedAt: new Date().toISOString(),
+      totalDiscovered: summary.totalDiscovered,
+      processed: summary.processed,
+      success: summary.success,
+      needsReview: summary.needsReview,
+      failed: summary.failed,
+    });
+
+    return { records, summary };
+  } finally {
+    db.close();
   }
-
-  const summary = createSummary(records);
-  summary.totalDiscovered = discoveredFiles.length;
-
-  await writeFile(join(options.outputDir, 'report.csv'), buildCsvReport(records), 'utf8');
-  await writeFile(join(options.outputDir, 'report.json'), JSON.stringify(records, null, 2), 'utf8');
-
-  return { records, summary };
 }

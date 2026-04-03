@@ -5,11 +5,7 @@ export default defineConfig({
   build: {
     outDir: '.cli-dist',
     emptyOutDir: false,
-    lib: {
-      entry: 'src/cli/batchGenerate.ts',
-      formats: ['cjs'],
-      fileName: () => 'batchGenerate.cjs',
-    },
+    ssr: 'src/cli/batchGenerate.ts',
     minify: false,
     target: 'node20',
     rollupOptions: {
@@ -18,6 +14,10 @@ export default defineConfig({
         ...builtinModules,
         ...builtinModules.map((moduleName) => `node:${moduleName}`),
       ],
+      output: {
+        entryFileNames: 'batchGenerate.cjs',
+        format: 'cjs',
+      },
     },
   },
 });

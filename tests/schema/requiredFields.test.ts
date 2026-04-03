@@ -47,6 +47,7 @@ test('createEmptyDraft initializes arrays and required review metadata', () => {
   expect(draft.courseInformation).toEqual({
     catalogDescription: '',
     prerequisites: '',
+    corequisites: '',
     designation: '',
   });
   expect(draft.learningOutcomes).toEqual([]);
