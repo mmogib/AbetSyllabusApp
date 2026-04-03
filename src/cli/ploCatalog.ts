@@ -3,6 +3,13 @@ import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 
 import type { ProgramCode } from './batchTypes';
+import { countPloDefinitionsForProgram } from './catalogDb';
+
+export interface PloCatalogImportResult {
+  csvFilesScanned: number;
+  matchedRows: number;
+  totalDefinitions: number;
+}
 
 function parseCsvLine(line: string): string[] {
   const values = line.match(/("[^"]*"|[^,]+)/g) ?? [];
@@ -13,8 +20,9 @@ export async function importPloCatalog(input: {
   db: DatabaseSync;
   ploDir: string;
   programCode: ProgramCode;
-}): Promise<void> {
-  const fileNames = await readdir(input.ploDir);
+}): Promise<PloCatalogImportResult> {
+  const fileNames = (await readdir(input.ploDir)).filter((name) => name.toLowerCase().endsWith('.csv'));
+  let matchedRows = 0;
   const insert = input.db.prepare(`
     INSERT INTO plo_definitions (program_code, plo_code, plo_label, plo_description)
     VALUES (?, ?, ?, ?)
@@ -23,7 +31,7 @@ export async function importPloCatalog(input: {
       plo_description = excluded.plo_description
   `);
 
-  for (const fileName of fileNames.filter((name) => name.toLowerCase().endsWith('.csv'))) {
+  for (const fileName of fileNames) {
     const text = await readFile(join(input.ploDir, fileName), 'utf8');
     const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '');
 
@@ -33,7 +41,14 @@ export async function importPloCatalog(input: {
         continue;
       }
 
+      matchedRows += 1;
       insert.run(programCode, ploCode, ploLabel, ploDescription);
     }
   }
+
+  return {
+    csvFilesScanned: fileNames.length,
+    matchedRows,
+    totalDefinitions: countPloDefinitionsForProgram(input.db, input.programCode),
+  };
 }

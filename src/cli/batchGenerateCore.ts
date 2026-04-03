@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { access, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { basename, extname, join, parse, relative } from 'node:path';
 
 import {
@@ -85,6 +85,13 @@ async function writeUniqueFile(
   return targetPath;
 }
 
+async function moveUniqueFile(sourcePath: string, directory: string): Promise<string> {
+  await ensureDirectory(directory);
+  const targetPath = await findUniqueFilePath(directory, basename(sourcePath));
+  await rename(sourcePath, targetPath);
+  return targetPath;
+}
+
 function toReviewDraft(
   extractedText: string,
   sourceFileName: string,
@@ -144,11 +151,13 @@ export async function runBatchGenerate(
   deps: BatchDependencies,
 ): Promise<{ records: BatchRecord[]; summary: BatchSummary }> {
   const termCode = options.termCode ?? getCurrentTermCode(options.now ?? new Date());
+  const processedDir = options.processedDir ?? join(options.workspaceDir, 'processed');
   const successDir = join(options.outputDir, 'success');
   const reviewDir = join(options.outputDir, 'review');
   await ensureDirectory(options.outputDir);
   await ensureDirectory(successDir);
   await ensureDirectory(reviewDir);
+  await ensureDirectory(processedDir);
 
   const db = openCatalogDb(options.catalogDbPath);
   ensureCatalogSchema(db);
@@ -226,6 +235,15 @@ export async function runBatchGenerate(
           const bytes = await deps.generateDocxBytes(draft);
           const outputPath = await writeUniqueFile(successDir, outputFileName, bytes);
           const outputFile = relative(options.outputDir, outputPath);
+          const processedPath = await moveUniqueFile(filePath, processedDir);
+          upsertSourceFile(db, {
+            sourcePath: processedPath,
+            sourceName: basename(processedPath),
+            sourceExtension: sourceMetadata.sourceExtension,
+            sizeBytes: sourceMetadata.sizeBytes,
+            modifiedAt: sourceMetadata.modifiedAt,
+            contentHash: sourceMetadata.contentHash,
+          });
 
           insertFileRun(db, {
             runId,

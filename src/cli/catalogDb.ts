@@ -6,6 +6,14 @@ export function openCatalogDb(path: string): DatabaseSync {
   return new DatabaseSync(path);
 }
 
+export function countPloDefinitionsForProgram(db: DatabaseSync, programCode: ProgramCode): number {
+  const row = db
+    .prepare('SELECT COUNT(*) as count FROM plo_definitions WHERE program_code = ?')
+    .get(programCode) as { count: number };
+
+  return row.count;
+}
+
 export function ensureCatalogSchema(db: DatabaseSync): void {
   db.exec(`
     PRAGMA foreign_keys = ON;

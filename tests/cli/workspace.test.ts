@@ -23,14 +23,15 @@ test('reuses an existing managed workspace when inbox already exists', async () 
 
   expect(workspace.inboxDir).toBe(join(root, 'inbox'));
   await expect(readdir(root)).resolves.toEqual(
-    expect.arrayContaining(['catalog', 'exports', 'inbox', 'logs', 'runs']),
+    expect.arrayContaining(['catalog', 'exports', 'inbox', 'index', 'logs', 'processed', 'runs']),
   );
 });
 
-test('moves PLO csv files into catalog/plo when adopting a workspace', async () => {
+test('keeps PLO csv files in index when adopting a workspace', async () => {
   const root = await mkdtemp(join(tmpdir(), 'abet-workspace-plo-'));
+  await mkdir(join(root, 'index'), { recursive: true });
   await writeFile(
-    join(root, 'math_and_as_plos.csv'),
+    join(root, 'index', 'math_and_as_plos.csv'),
     [
       'plo_code,plo_label,plo_description,program_code',
       '1,SO1,Desc,MATH',
@@ -40,6 +41,8 @@ test('moves PLO csv files into catalog/plo when adopting a workspace', async () 
 
   const workspace = await resolveWorkspace(root);
 
-  await expect(readdir(workspace.ploDir)).resolves.toContain('math_and_as_plos.csv');
-  await expect(readdir(root)).resolves.not.toContain('math_and_as_plos.csv');
+  await expect(readdir(workspace.indexDir)).resolves.toContain('math_and_as_plos.csv');
+  await expect(readdir(workspace.indexDir)).resolves.toEqual(
+    expect.not.arrayContaining(['catalog', 'plo']),
+  );
 });

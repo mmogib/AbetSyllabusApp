@@ -13,6 +13,7 @@ Date: 2026-04-03
 - Hid the non-functional project export/import panel from the public beta UI while keeping the code in place.
 - Added a deterministic local batch CLI for backlog processing.
 - Added a managed workspace flow and central SQLite catalog for the batch CLI.
+- Revised the workspace so `index/` is the stable home for PLO CSV files and `processed/` receives successfully handled source files.
 - Published the repo at `https://github.com/mmogib/AbetSyllabusApp`.
 - Published the live beta at `https://abet-syllabus-app.netlify.app`.
 
@@ -29,7 +30,7 @@ Date: 2026-04-03
 This is now a public-beta candidate, not just a prototype. It is suitable for friend-level testing and feedback, but parser coverage is still rule-based and should be treated as actively improving rather than complete.
 The project export/import feature still exists in code, but it is intentionally hidden from the current beta UI.
 There is now also a deterministic local batch CLI for backlog processing, with no AI usage in v1, a managed external workspace, and a central SQLite catalog.
-The managed workspace also normalizes detected PLO CSV files into `catalog/plo/`.
+The managed workspace now expects reference PLO CSV files in `index/`, warns if the selected program still has no cataloged PLO rows, and moves successful source files into `processed/`.
 
 ## Highest Priority Next Step
 

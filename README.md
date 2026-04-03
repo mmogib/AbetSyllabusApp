@@ -61,10 +61,12 @@ C:\Users\mmogi\Documents\AbetSyllabusData
 Behavior:
 - deterministic only in v1, with no AI calls
 - bootstraps or reuses a managed workspace rooted at the provided workspace path
-- normalizes detected PLO CSV files into `catalog/plo/`
-- imports program-specific PLO rows from CSV files for `MATH`, `AS`, or `DATA`
+- reads program-specific PLO CSV files from `index/`
+- upserts PLO rows for `MATH`, `AS`, or `DATA` into the central catalog
+- warns and continues if no PLO rows exist for the selected program
 - stores processing history and academic data in a central SQLite catalog
 - generates DOCX only for files whose required fields are fully resolved
+- moves successfully processed source files into `processed/`
 - copies review-needed source files into per-run `review/`
 - writes both `report.csv` and `report.json` for each run
 
@@ -72,10 +74,11 @@ Output structure:
 
 ```text
 <workspace>/
+  index/
   catalog/
     abet_syllabus_catalog.sqlite
-    plo/
   inbox/
+  processed/
   runs/
     <timestamp>/
       output/

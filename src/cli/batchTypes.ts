@@ -26,6 +26,7 @@ export interface BatchSummary {
 export interface BatchOptions {
   workspaceDir: string;
   inputDir: string;
+  processedDir?: string;
   outputDir: string;
   catalogDbPath: string;
   programCode: ProgramCode;

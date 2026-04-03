@@ -50,6 +50,7 @@ test('writes success docx output plus csv and json reports for a complete source
   expect(result.summary.success).toBe(1);
   expect(result.records[0]?.status).toBe('success');
   await expect(stat(join(outputDir, 'success', 'T252ICS321AbetSyllabus.docx'))).resolves.toBeTruthy();
+  await expect(stat(join(root, 'processed', 'course-spec.txt'))).resolves.toBeTruthy();
   await expect(readFile(join(outputDir, 'report.csv'), 'utf8')).resolves.toContain('success');
   await expect(readFile(join(outputDir, 'report.json'), 'utf8')).resolves.toContain('"status": "success"');
 });
@@ -85,6 +86,7 @@ test('copies review artifacts and skips docx generation for unresolved files', a
 
   expect(result.summary.needsReview).toBe(1);
   expect(result.records[0]?.status).toBe('needs_review');
+  await expect(stat(join(inputDir, 'course-spec.txt'))).resolves.toBeTruthy();
   await expect(stat(join(outputDir, 'review', 'course-spec.txt'))).resolves.toBeTruthy();
   await expect(readFile(join(outputDir, 'review', 'course-spec.extracted.txt'), 'utf8')).resolves.toContain('Course Title: Software Engineering I');
 });

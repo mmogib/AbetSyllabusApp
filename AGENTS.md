@@ -31,6 +31,7 @@ Working pieces:
 - DOCX generation using `output_template/ABETSyllabusTemplate2.docx`
 - deterministic batch CLI for folder processing with CSV/JSON reports and review artifacts
 - managed external CLI workspace plus central SQLite catalog for processing history and academic data
+- `index/` holds reference inputs like PLO CSV files, while `processed/` holds successfully handled source files
 
 Known limitations:
 - parsing is much better, but still rule-based and sample-sensitive

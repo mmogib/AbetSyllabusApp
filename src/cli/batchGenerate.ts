@@ -42,6 +42,7 @@ function readOptions(): BatchOptions {
   return {
     workspaceDir: resolvedWorkspaceDir,
     inputDir: resolvedWorkspaceDir,
+    processedDir: '',
     outputDir: readFlag('--output') ? resolve(readFlag('--output') as string) : '',
     catalogDbPath: readFlag('--catalog-db')
       ? resolve(readFlag('--catalog-db') as string)
@@ -60,6 +61,7 @@ async function main(): Promise<void> {
   const options: BatchOptions = {
     ...rawOptions,
     inputDir: workspace.inboxDir,
+    processedDir: workspace.processedDir,
     outputDir:
       rawOptions.outputDir ||
       join(workspace.runsDir, new Date().toISOString().replace(/[:.]/g, '-'), 'output'),
@@ -69,21 +71,25 @@ async function main(): Promise<void> {
   const db = openCatalogDb(options.catalogDbPath);
   ensureCatalogSchema(db);
   try {
-    await importPloCatalog({
+    const ploImport = await importPloCatalog({
       db,
-      ploDir: workspace.ploDir,
+      ploDir: workspace.indexDir,
       programCode: options.programCode,
     });
-    await importPloCatalog({
-      db,
-      ploDir: workspace.inboxDir,
-      programCode: options.programCode,
-    });
-    await importPloCatalog({
-      db,
-      ploDir: workspace.rootDir,
-      programCode: options.programCode,
-    });
+
+    if (ploImport.totalDefinitions === 0) {
+      console.warn(
+        `Warning: no PLO definitions found for program ${options.programCode} in ${workspace.indexDir}. Continuing without PLO catalog rows.`,
+      );
+    } else if (ploImport.matchedRows === 0) {
+      console.log(
+        `Using existing PLO definitions for program ${options.programCode} from ${options.catalogDbPath}.`,
+      );
+    } else {
+      console.log(
+        `Loaded ${ploImport.matchedRows} PLO CSV rows for program ${options.programCode}; catalog now has ${ploImport.totalDefinitions} definitions.`,
+      );
+    }
   } finally {
     db.close();
   }
