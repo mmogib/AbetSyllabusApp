@@ -9,7 +9,7 @@
 - Optional AI suggestions through browser-session API keys only.
 - Review unresolved or low-confidence fields before generation.
 - Primary output: in-browser generated `DOCX`.
-- Project persistence: export/import local JSON project file.
+- Hidden for now: project export/import remains in code but is not exposed in the beta UI.
 
 ## Current Status
 
@@ -26,7 +26,6 @@ Working pieces:
 - targeted review UI for unresolved fields
 - optional AI suggestions with `OpenAI` or `OpenRouter`
 - term selection with generated filenames like `T252MATH101AbetSyllabus.docx`
-- project export/import
 - DOCX generation using `output_template/ABETSyllabusTemplate2.docx`
 
 Known limitations:
@@ -34,6 +33,7 @@ Known limitations:
 - some unseen PDF layouts will still need extraction/parser adjustments
 - AI suggestions run client-side, so provider keys are exposed to the browser session
 - there is still no backend persistence, collaboration, or audit trail
+- project export/import is not currently exposed in the public UI
 
 ## Most Recent Delivery
 
@@ -48,6 +48,7 @@ Recent stabilization work also included:
 - expanded parser coverage in `src/lib/parse/courseSpecParser.ts`
 - OpenRouter support alongside OpenAI in `src/lib/llm/openaiSuggestions.ts`
 - academic term utilities and filename generation in `src/lib/term/academicTerms.ts`
+- contextual AI panels and hidden project panel in `src/App.tsx`
 
 ## Current Priorities
 

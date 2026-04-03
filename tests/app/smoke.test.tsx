@@ -20,9 +20,7 @@ test('renders the beta shell title and subtitle', () => {
   expect(
     screen.getByText('Complete any required information not resolved automatically.'),
   ).toBeInTheDocument();
-  expect(
-    screen.getByText('Export or import a working draft as a local JSON file.'),
-  ).toBeInTheDocument();
+  expect(screen.queryByText('Export or import a working draft as a local JSON file.')).not.toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'AI Provider & API Key' })).not.toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'AI Suggestions' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Use AI Assistance' })).not.toBeInTheDocument();

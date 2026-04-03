@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { ApiKeyPanel } from './components/ApiKeyPanel';
 import { FileUpload } from './components/FileUpload';
 import { InstructorPanel } from './components/InstructorPanel';
-import { ProjectPanel } from './components/ProjectPanel';
 import { ReviewForm } from './components/ReviewForm';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
 import { SummaryPanel } from './components/SummaryPanel';
@@ -18,7 +17,6 @@ import { createAppState, getReviewSlice } from './state/appState';
 import {
   applyFieldSuggestions,
   applyUploadedDraft,
-  importProjectIntoState,
   resolveDraftField,
   updateGenerationTermCode,
   updateDraftField,
@@ -168,13 +166,6 @@ export default function App() {
         </section>
       ) : null}
 
-      <ProjectPanel
-        draft={appState.draft}
-        extractedText={appState.extractedText}
-        onImport={(project) => {
-          setAppState((current) => importProjectIntoState(current, project));
-        }}
-      />
     </main>
   );
 }

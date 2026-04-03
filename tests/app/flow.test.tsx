@@ -8,7 +8,7 @@ test('shows the end-to-end beta workflow and parses an uploaded source file', as
   expect(screen.getByText('Upload Source File')).toBeInTheDocument();
   expect(screen.queryByText('AI Provider & API Key')).not.toBeInTheDocument();
   expect(screen.getByText('Missing Fields Review')).toBeInTheDocument();
-  expect(screen.getByText('Project')).toBeInTheDocument();
+  expect(screen.queryByText('Project')).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Review status')).not.toBeInTheDocument();
 
   const file = new File(

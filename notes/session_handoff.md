@@ -10,17 +10,20 @@ Date: 2026-04-03
 - Added academic term handling and generated DOCX filenames such as `T252MATH101AbetSyllabus.docx`.
 - Switched the output generator to `output_template/ABETSyllabusTemplate2.docx`.
 - Adjusted DOCX generation so template-native numbering and bullets are preserved.
+- Hid the non-functional project export/import panel from the public beta UI while keeping the code in place.
 - Published the repo at `https://github.com/mmogib/AbetSyllabusApp`.
 - Published the live beta at `https://abet-syllabus-app.netlify.app`.
 
 ## Verified State
 
-- `npm test` last known passing state before release prep: `59/59`
-- `npm run build` last known passing state before release prep: PASS
+- `npm test` current known passing state: `63/63`
+- `npm run typecheck` current known passing state: PASS
+- `npx vite build --emptyOutDir false` current known passing state: PASS
 
 ## Current Product Truth
 
 This is now a public-beta candidate, not just a prototype. It is suitable for friend-level testing and feedback, but parser coverage is still rule-based and should be treated as actively improving rather than complete.
+The project export/import feature still exists in code, but it is intentionally hidden from the current beta UI.
 
 ## Highest Priority Next Step
 

@@ -11,7 +11,6 @@ Current capabilities:
 - extract and parse course identity, credits, description, prerequisites, CLOs, topics, and materials
 - review unresolved or low-confidence fields before generation
 - optionally request AI suggestions with `OpenAI` or `OpenRouter`
-- export/import local project JSON files
 - generate DOCX output using the departmental template in `output_template/ABETSyllabusTemplate2.docx`
 - generate filenames in the form `T252MATH101AbetSyllabus.docx`
 
@@ -22,6 +21,7 @@ Current capabilities:
 - No server storage
 - API keys are stored in browser session only
 - AI usage is optional
+- project export/import remains in code but is hidden from the public beta UI for now
 
 ## Local Development
 
