@@ -14,6 +14,7 @@ Date: 2026-04-03
 - Added a deterministic local batch CLI for backlog processing.
 - Added a managed workspace flow and central SQLite catalog for the batch CLI.
 - Revised the workspace so `index/` is the stable home for PLO CSV files and `processed/` receives successfully handled source files.
+- Added a separate catalog query CLI with named reports, raw SQL, CSV export into `exports/`, and built-in help.
 - Published the repo at `https://github.com/mmogib/AbetSyllabusApp`.
 - Published the live beta at `https://abet-syllabus-app.netlify.app`.
 

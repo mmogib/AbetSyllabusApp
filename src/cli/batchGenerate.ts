@@ -8,6 +8,26 @@ import { assertProgramCode } from './program';
 import { resolveWorkspace } from './workspace';
 import { extractSourceTextFromPath, generateDocxBytesForDraft } from './nodeAdapters';
 
+function getBatchHelpText(): string {
+  return [
+    'Usage: npm run batch -- "<workspaceDir>" <MATH|AS|DATA> [options]',
+    '',
+    'Options:',
+    '  --workspace <path>',
+    '  --program <MATH|AS|DATA>',
+    '  --term 252',
+    '  --output <path>',
+    '  --catalog-db <path>',
+    '  --recursive false',
+    '  --copy-review-sources false',
+    '  --write-extracted-text false',
+    '',
+    'Examples:',
+    '  npm run batch -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" MATH',
+    '  npm run batch -- --workspace "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" --program DATA --term 253',
+  ].join('\n');
+}
+
 function readFlag(name: string): string | undefined {
   const index = process.argv.indexOf(name);
   if (index === -1) {
@@ -28,6 +48,9 @@ function readBooleanFlag(name: string, defaultValue: boolean): boolean {
 
 function readOptions(): BatchOptions {
   const positionalArgs = process.argv.slice(2).filter((value) => !value.startsWith('--'));
+  if (positionalArgs[0] === 'help') {
+    throw new Error(getBatchHelpText());
+  }
   const workspaceDir = readFlag('--workspace') ?? positionalArgs[0];
   const programCode = assertProgramCode(readFlag('--program') ?? positionalArgs[1]);
 
@@ -56,6 +79,16 @@ function readOptions(): BatchOptions {
 }
 
 async function main(): Promise<void> {
+  if (
+    process.argv.includes('--help') ||
+    process.argv.includes('-h') ||
+    process.argv.includes('help') ||
+    process.argv.length <= 2
+  ) {
+    console.log(getBatchHelpText());
+    return;
+  }
+
   const rawOptions = readOptions();
   const workspace = await resolveWorkspace(rawOptions.workspaceDir);
   const options: BatchOptions = {

@@ -50,6 +50,7 @@ Backlog processing is available through a managed workspace:
 
 ```bash
 npm run batch -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" MATH
+npm run query -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" runs
 ```
 
 Recommended runtime root:
@@ -69,6 +70,13 @@ Behavior:
 - moves successfully processed source files into `processed/`
 - copies review-needed source files into per-run `review/`
 - writes both `report.csv` and `report.json` for each run
+
+Help:
+
+```bash
+npm run batch -- help
+npm run query -- help
+```
 
 Output structure:
 
@@ -105,7 +113,36 @@ For direct Node invocation after building the CLI bundle:
 ```bash
 npx vite build --config vite.cli.config.ts
 node .cli-dist/batchGenerate.cjs --workspace "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" --program MATH
+
+npx vite build --config vite.query.config.ts
+node .cli-dist/queryCatalog.cjs --workspace "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" runs
 ```
+
+## Catalog Query CLI
+
+Use the catalog query CLI for inspection and CSV exports from the central SQLite database.
+
+Examples:
+
+```bash
+npm run query -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" runs
+npm run query -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" courses --program MATH --term 252
+npm run query -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" clos --course MATH102
+npm run query -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" course-plo-mappings --course MATH102 --program MATH --term 252
+npm run query -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" program-plo-matrix --program MATH --term 252 --export
+npm run query -- "C:\\Users\\mmogi\\Documents\\AbetSyllabusData" sql --sql "select course_number, course_title from courses limit 10"
+```
+
+Named query commands:
+- `runs`
+- `courses`
+- `needs-review`
+- `clos`
+- `course-plo-mappings`
+- `program-plo-matrix`
+- `sql`
+
+CSV exports are saved into `<workspace>/exports/`.
 
 ## Release Workflow
 

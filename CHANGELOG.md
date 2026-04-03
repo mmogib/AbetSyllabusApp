@@ -7,6 +7,7 @@
 - Added a central SQLite catalog for processing history, courses, term records, requisites, CLOs, and program-scoped PLO definitions.
 - Switched the CLI bundle to an SSR/node build so `node:sqlite` works in real runs.
 - Revised the managed workspace so `index/` supplies PLO CSV files, successful source files move into `processed/`, and missing program PLO definitions only trigger a warning.
+- Added a catalog query CLI with named reports, raw SQL inspection, CSV exports into `exports/`, and built-in help output.
 - Reused shared browser/Node extraction and DOCX generation cores so the batch path and web app stay aligned.
 - Added `report.csv` and `report.json` outputs plus `success/` and `review/` folders for batch runs.
 - Added Node-side PDF worker bootstrapping so batch PDF extraction works against the current sample corpus.

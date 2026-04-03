@@ -14,7 +14,10 @@ export interface ManagedWorkspace {
   logsDir: string;
 }
 
-export async function resolveWorkspace(rootDir: string): Promise<ManagedWorkspace> {
+export async function resolveWorkspace(
+  rootDir: string,
+  options: { adoptSourceFiles?: boolean } = {},
+): Promise<ManagedWorkspace> {
   const indexDir = join(rootDir, 'index');
   const inboxDir = join(rootDir, 'inbox');
   const processedDir = join(rootDir, 'processed');
@@ -25,6 +28,7 @@ export async function resolveWorkspace(rootDir: string): Promise<ManagedWorkspac
 
   const entries = await readdir(rootDir, { withFileTypes: true });
   const alreadyManaged = entries.some((entry) => entry.isDirectory() && entry.name === 'inbox');
+  const adoptSourceFiles = options.adoptSourceFiles ?? true;
 
   await mkdir(indexDir, { recursive: true });
   await mkdir(inboxDir, { recursive: true });
@@ -34,7 +38,7 @@ export async function resolveWorkspace(rootDir: string): Promise<ManagedWorkspac
   await mkdir(exportsDir, { recursive: true });
   await mkdir(logsDir, { recursive: true });
 
-  if (!alreadyManaged) {
+  if (!alreadyManaged && adoptSourceFiles) {
     for (const entry of entries) {
       if (!entry.isFile()) {
         continue;

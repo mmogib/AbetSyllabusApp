@@ -32,6 +32,7 @@ Working pieces:
 - deterministic batch CLI for folder processing with CSV/JSON reports and review artifacts
 - managed external CLI workspace plus central SQLite catalog for processing history and academic data
 - `index/` holds reference inputs like PLO CSV files, while `processed/` holds successfully handled source files
+- both CLI entrypoints now expose `--help`: batch generation and catalog querying
 
 Known limitations:
 - parsing is much better, but still rule-based and sample-sensitive
