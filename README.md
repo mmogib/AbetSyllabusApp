@@ -43,6 +43,26 @@ npm test
 npm run build
 ```
 
+## Release Workflow
+
+Simple versioned releases are handled with `npm version`.
+
+Available commands:
+
+```bash
+npm run release:patch
+npm run release:minor
+npm run release:major
+```
+
+What each release command does:
+- runs verification first: `npm test`, `npm run typecheck`, and `npx vite build --emptyOutDir false`
+- bumps the app version in `package.json` and `package-lock.json`
+- creates the release commit and git tag such as `v0.1.1`
+- pushes the current branch and tags to GitHub
+
+Release commands should be run from a clean git worktree.
+
 ## Deployment
 
 This is a static Vite app and is configured for Netlify:
