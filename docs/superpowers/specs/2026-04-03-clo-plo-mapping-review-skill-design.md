@@ -12,6 +12,7 @@ The skill should:
 - ask the user for any missing required inputs
 - read the database from a user-provided workspace
 - export a human-friendly Markdown review file
+- generate an initial CLO-to-PLO mapping during export
 - wait for human review and approval
 - validate the reviewed file strictly
 - update the database only after approval
@@ -33,7 +34,8 @@ So the right shape is a reusable Codex skill plus a few deterministic helper scr
 - interactive workflow
 - one course or a filtered batch of courses
 - read workspace and catalog database
-- read CLOs, PLOs, and current mappings
+- read CLOs and PLO definitions
+- generate initial CLO-to-PLO mappings
 - generate one Markdown review file per course
 - validate reviewed Markdown strictly
 - apply approved mappings to `course_clo_plo_mappings`
@@ -71,9 +73,9 @@ Then the skill:
    - course term record
    - CLO rows
    - PLO definitions for the selected program
-   - current CLO-PLO mappings
 4. selects matching courses from the catalog
-5. writes one Markdown review file per selected course into a review/export folder
+5. generates an initial mapping for each CLO
+6. writes one Markdown review file per selected course into a review/export folder
 
 ### Phase 2: Human Review
 
@@ -161,10 +163,6 @@ List all PLOs for the selected program with:
 - PLO label
 - full description
 
-### Current Mapping Section
-
-Show the currently stored mappings, if any.
-
 ### CLO Review Section
 
 For each CLO, include:
@@ -173,18 +171,18 @@ For each CLO, include:
 ### CLO 1.1
 CLO Text: Explain the concept of sequences and series.
 
-Suggested PLOs: [1, 4]
 Approve: yes
 Final PLOs: [1, 4]
-Notes:
+Notes: Mapped to PLO 1 for mathematical foundations and PLO 4 for problem-solving/application.
 ```
 
 Rules:
-- `Suggested PLOs` is informational
+- `Approve` defaults to `yes`
 - `Approve` must be `yes` or `no`
 - `Final PLOs` is authoritative
+- `Final PLOs` is prefilled by the initial mapping pass
 - `Final PLOs: []` is allowed as an explicit no-mapping decision
-- `Notes` is optional
+- `Notes` should carry the mapping rationale
 
 ## Validation Rules
 
@@ -234,11 +232,12 @@ Recommended scripts:
 
 Responsibilities:
 - read workspace/catalog path
-- query course/CLO/PLO/mapping data
+- query course/CLO/PLO data
 - support scope selection:
   - single course
   - all courses in a term/program
   - filtered subsets
+- generate initial CLO-to-PLO mappings with rationale
 - emit one Markdown review file per selected course
 
 ### `scripts/validate_review.py` or `scripts/validate_review.ts`
@@ -344,12 +343,14 @@ So the better design is:
 
 This keeps the review surface readable while still allowing large-term coverage.
 
-## Open Dependency
+## Initial Mapping Behavior
 
-The skill becomes much more valuable once the catalog contains real `course_clo_plo_mappings`.
+The initial mapping generated during export is the review starting point.
 
-Today the query/export/apply path can still be built, but meaningful review depends on:
-- existing mappings already present, or
-- a later helper that proposes initial suggested mappings
+That means:
+- `Final PLOs` is prefilled during export
+- `Approve` starts as `yes`
+- the reviewer changes the mapping only when they disagree
+- `Notes` should explain the rationale so the reviewer can assess it quickly
 
-V1 does not require automatic suggestion quality to be perfect, because the human reviewer is authoritative.
+The human reviewer remains authoritative.

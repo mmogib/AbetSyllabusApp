@@ -4,6 +4,7 @@
 
 - Client-only static web app.
 - Companion local batch CLI for backlog processing.
+- Companion Codex skill for CLO-to-PLO review and application.
 - No backend, no auth, no server storage.
 - Input: local `PDF`, `DOCX`, or `TXT`.
 - Deterministic extraction first.
@@ -33,6 +34,12 @@ Working pieces:
 - managed external CLI workspace plus central SQLite catalog for processing history and academic data
 - `index/` holds reference inputs like PLO CSV files, while `processed/` holds successfully handled source files
 - both CLI entrypoints now expose `--help`: batch generation and catalog querying
+- local Codex skill at `C:\Users\mmogi\.codex\skills\clo-plo-mapping-review`
+- the CLO-PLO skill now exports one Markdown review file per course with:
+  - `Approve: yes`
+  - AI-generated initial `Final PLOs`
+  - rationale in `Notes`
+- the CLO-PLO skill validates reviewed files strictly and applies approved mappings transactionally into `course_clo_plo_mappings`
 
 Known limitations:
 - parsing is much better, but still rule-based and sample-sensitive
@@ -41,6 +48,8 @@ Known limitations:
 - there is still no backend persistence, collaboration, or audit trail
 - project export/import is not currently exposed in the public UI
 - SQLite support relies on Node's experimental `node:sqlite` module in the current environment
+- CLO-to-PLO mapping quality currently depends on the stored CLO text quality in the catalog
+- some stored CLO rows still contain leaked table residue such as assessment/delivery text, which weakens initial mapping quality
 
 ## Most Recent Delivery
 
@@ -59,14 +68,18 @@ Recent stabilization work also included:
 - shared browser/Node extraction and DOCX cores plus `src/cli/batchGenerate.ts`
 - managed workspace handling in `src/cli/workspace.ts`
 - central catalog schema and persistence in `src/cli/catalogDb.ts`
+- interactive CLO-PLO review/apply skill scripts in:
+  - `C:\Users\mmogi\.codex\skills\clo-plo-mapping-review\scripts\export_review.py`
+  - `C:\Users\mmogi\.codex\skills\clo-plo-mapping-review\scripts\validate_review.py`
+  - `C:\Users\mmogi\.codex\skills\clo-plo-mapping-review\scripts\apply_review.py`
 
 ## Current Priorities
 
-1. Run broader friend testing against additional real course files
-2. Collect exact field-level failures from new samples
-3. Patch extraction/parsing regressions with targeted tests
-4. Use the batch CLI with the managed workspace and inspect the SQLite catalog plus per-run reports
-5. Improve review/error messaging where failures are still confusing
+1. Clean CLO extraction/parsing before large-scale CLO-PLO mapping
+2. Remove table residue from stored `course_clos.clo_text` values
+3. Reprocess affected courses into the central catalog after parser cleanup
+4. Revisit CLO-PLO mapping quality once upstream CLO text is clean
+5. Continue friend testing against new real course files and patch exact failures with targeted tests
 
 ## Restart Instruction
 
@@ -74,7 +87,8 @@ When resuming, start with:
 
 1. Run `npm test`
 2. Run `npm run build`
-3. Test any newly reported sample files in `input_samples/`
-4. Patch the exact extraction/parser failure before changing unrelated features
-5. Keep the DOCX output aligned with `ABETSyllabusTemplate2.docx`
-6. For backlog runs, use `npm run batch -- "<workspaceDir>" <MATH|AS|DATA>` or the direct Node CLI entry with `--workspace` and `--program`
+3. Inspect the latest cataloged CLO text for noise before trusting CLO-PLO mappings
+4. Patch the exact CLO extraction/parser failure before changing unrelated mapping behavior
+5. Re-run affected files into the managed workspace if parser cleanup changes stored academic data
+6. Keep the DOCX output aligned with `ABETSyllabusTemplate2.docx`
+7. For backlog runs, use `npm run batch -- "<workspaceDir>" <MATH|AS|DATA>` or the direct Node CLI entry with `--workspace` and `--program`

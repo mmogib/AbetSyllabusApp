@@ -11,6 +11,13 @@
 - Reused shared browser/Node extraction and DOCX generation cores so the batch path and web app stay aligned.
 - Added `report.csv` and `report.json` outputs plus `success/` and `review/` folders for batch runs.
 - Added Node-side PDF worker bootstrapping so batch PDF extraction works against the current sample corpus.
+- Added a local Codex CLO-PLO review skill with export, validate, and apply scripts.
+- Updated the CLO-PLO review export format so each course file now starts with:
+  - `Approve: yes`
+  - initial `Final PLOs`
+  - rationale in `Notes`
+- Added transactional application of reviewed CLO-PLO mappings into `course_clo_plo_mappings`.
+- Verified live application of reviewed mappings for `MATH 208`.
 
 ## 0.1.0 - 2026-04-03
 
