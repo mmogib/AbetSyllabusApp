@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { ApiKeyPanel } from './components/ApiKeyPanel';
 import { FileUpload } from './components/FileUpload';
-import { GenerationPanel } from './components/GenerationPanel';
 import { ProjectPanel } from './components/ProjectPanel';
 import { ReviewForm } from './components/ReviewForm';
 import { StatusPanel } from './components/StatusPanel';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
+import { SummaryPanel } from './components/SummaryPanel';
+import { TermPanel } from './components/TermPanel';
 import {
   OPENAI_PROVIDER,
   readSessionApiKey,
@@ -51,6 +52,14 @@ export default function App() {
         <StatusPanel reviewState={reviewSlice.reviewState} />
       </div>
 
+      <TermPanel
+        termCode={appState.draft.generationMetadata.termCode}
+        termOptions={termOptions}
+        onTermChange={(termCode) => {
+          setAppState((current) => updateGenerationTermCode(current, termCode));
+        }}
+      />
+
       <FileUpload
         onLoaded={(payload) => {
           setAppState((current) => applyUploadedDraft(current, payload));
@@ -58,41 +67,13 @@ export default function App() {
       />
 
       {hasUploadedSource ? (
-        <section className="summary-panel" aria-labelledby="summary-panel-title">
-          <div className="section-heading">
-            <div>
-              <h2 id="summary-panel-title">Parsed Summary</h2>
-              <p>
-                Parsed values detected from <strong>{appState.sourceFileName}</strong>. Any missing
-                required fields remain below in the review form.
-              </p>
-            </div>
-            <span className="review-panel__count">{reviewSlice.fields.length} open</span>
-          </div>
-
-          <dl className="summary-grid">
-            <div>
-              <dt>Department</dt>
-              <dd>{appState.draft.courseIdentity.department || 'Not detected'}</dd>
-            </div>
-            <div>
-              <dt>Course Number</dt>
-              <dd>{appState.draft.courseIdentity.courseNumber || 'Not detected'}</dd>
-            </div>
-            <div>
-              <dt>Course Title</dt>
-              <dd>{appState.draft.courseIdentity.courseTitle || 'Not detected'}</dd>
-            </div>
-            <div>
-              <dt>Instructor</dt>
-              <dd>{appState.draft.courseIdentity.instructorName || 'Not detected'}</dd>
-            </div>
-            <div className="summary-grid__wide">
-              <dt>Catalog Description</dt>
-              <dd>{appState.draft.courseInformation.catalogDescription || 'Not detected'}</dd>
-            </div>
-          </dl>
-        </section>
+        <SummaryPanel
+          draft={appState.draft}
+          canGenerate={reviewSlice.reviewState.canGenerate}
+          fileName={generationFileName}
+          sourceFileName={appState.sourceFileName ?? ''}
+          openFieldCount={reviewSlice.fields.length}
+        />
       ) : null}
 
       <ApiKeyPanel
@@ -136,17 +117,6 @@ export default function App() {
           }}
         />
       </section>
-
-      <GenerationPanel
-        draft={appState.draft}
-        canGenerate={reviewSlice.reviewState.canGenerate}
-        termCode={appState.draft.generationMetadata.termCode}
-        termOptions={termOptions}
-        onTermChange={(termCode) => {
-          setAppState((current) => updateGenerationTermCode(current, termCode));
-        }}
-        fileName={generationFileName}
-      />
 
       <ProjectPanel
         draft={appState.draft}

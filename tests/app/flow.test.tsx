@@ -4,10 +4,10 @@ import App from '../../src/App';
 test('shows the end-to-end beta workflow and parses an uploaded source file', async () => {
   render(<App />);
 
+  expect(screen.getByRole('heading', { name: 'Term' })).toBeInTheDocument();
   expect(screen.getByText('Upload Source File')).toBeInTheDocument();
   expect(screen.getByText('AI Provider & API Key')).toBeInTheDocument();
   expect(screen.getByText('Missing Fields Review')).toBeInTheDocument();
-  expect(screen.getByText('Generate DOCX')).toBeInTheDocument();
   expect(screen.getByText('Project')).toBeInTheDocument();
 
   const file = new File(
@@ -34,6 +34,6 @@ test('shows the end-to-end beta workflow and parses an uploaded source file', as
   expect(
     screen.getByText('Loaded course-spec.txt. Review any remaining missing fields below.'),
   ).toBeInTheDocument();
-  expect(screen.getByText('Parsed Summary')).toBeInTheDocument();
+  expect(screen.getByText('Summary')).toBeInTheDocument();
   expect(screen.getByText('Software Engineering I')).toBeInTheDocument();
 });

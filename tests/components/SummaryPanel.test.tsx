@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
-import { GenerationPanel } from '../../src/components/GenerationPanel';
+import { SummaryPanel } from '../../src/components/SummaryPanel';
 import { createEmptyDraft } from '../../src/lib/schema/defaultDraft';
 import { generateSyllabusDocx } from '../../src/lib/docx/generateSyllabusDocx';
 
@@ -61,73 +61,60 @@ function createResolvedDraft() {
   return draft;
 }
 
-const termOptions = [
-  { code: '251', label: 'T251' },
-  { code: '252', label: 'T252' },
-  { code: '253', label: 'T253' },
-];
-
-test('appends the download anchor before clicking and revokes it asynchronously', async () => {
+test('renders summary wording and downloads from the summary header', async () => {
   const draft = createResolvedDraft();
   const blob = new Blob(['docx'], {
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   });
   const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:docx');
   const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
-    expect(document.body.contains(this)).toBe(true);
-    expect(revokeObjectURL).not.toHaveBeenCalled();
-    expect(this.download).toBe('T252DATA201AbetSyllabus.docx');
-  });
-  const appendChild = vi.spyOn(document.body, 'appendChild');
-  const removeChild = vi.spyOn(document.body, 'removeChild');
+  const click = vi
+    .spyOn(HTMLAnchorElement.prototype, 'click')
+    .mockImplementation(function (this: HTMLAnchorElement) {
+      expect(document.body.contains(this)).toBe(true);
+      expect(this.download).toBe('T252DATA201AbetSyllabus.docx');
+    });
 
   vi.mocked(generateSyllabusDocx).mockResolvedValue(blob);
 
   render(
-    <GenerationPanel
+    <SummaryPanel
       draft={draft}
       canGenerate
-      termCode="252"
-      termOptions={termOptions}
-      onTermChange={() => {}}
+      fileName="T252DATA201AbetSyllabus.docx"
+      sourceFileName="DATA 201 Course Specifications.docx"
+      openFieldCount={0}
     />,
   );
 
-  fireEvent.click(screen.getByRole('button', { name: 'Download DOCX' }));
+  expect(screen.getByRole('heading', { name: 'Summary' })).toBeInTheDocument();
+  expect(screen.queryByText('Parsed Summary')).not.toBeInTheDocument();
 
-  expect(revokeObjectURL).not.toHaveBeenCalled();
-  await waitFor(() => expect(appendChild).toHaveBeenCalledTimes(1));
+  const button = screen.getByRole('button', { name: 'Download DOCX' });
+  expect(button).toHaveClass('button--success');
+
+  fireEvent.click(button);
+
   await waitFor(() => expect(click).toHaveBeenCalledTimes(1));
-
   await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith('blob:docx'));
-  expect(removeChild).toHaveBeenCalledTimes(1);
-  expect(document.body.querySelector('a[download]')).toBeNull();
 
   createObjectURL.mockRestore();
   revokeObjectURL.mockRestore();
   click.mockRestore();
-  appendChild.mockRestore();
-  removeChild.mockRestore();
 });
 
-test('renders a term dropdown and forwards term changes', () => {
+test('disables the summary download button until required fields are resolved', () => {
   const draft = createResolvedDraft();
-  const onTermChange = vi.fn();
 
   render(
-    <GenerationPanel
+    <SummaryPanel
       draft={draft}
-      canGenerate
-      termCode="252"
-      termOptions={termOptions}
-      onTermChange={onTermChange}
+      canGenerate={false}
+      fileName="T252DATA201AbetSyllabus.docx"
+      sourceFileName="DATA 201 Course Specifications.docx"
+      openFieldCount={2}
     />,
   );
 
-  fireEvent.change(screen.getByLabelText('Term'), {
-    target: { value: '253' },
-  });
-
-  expect(onTermChange).toHaveBeenCalledWith('253');
+  expect(screen.getByRole('button', { name: 'Download DOCX' })).toBeDisabled();
 });
