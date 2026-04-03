@@ -1,0 +1,286 @@
+# CLO-PLO Mapping Review Skill Design
+
+**Skill name:** `clo-plo-mapping-review`
+
+**Install location:** `C:\Users\mmogi\.codex\skills\clo-plo-mapping-review`
+
+## Goal
+
+Create an interactive Codex skill that helps review and update CLO-to-PLO mappings stored in the central SQLite catalog for an ABET syllabus workspace.
+
+The skill should:
+- ask the user for any missing required inputs
+- read the database from a user-provided workspace
+- export a human-friendly Markdown review file
+- wait for human review and approval
+- validate the reviewed file strictly
+- update the database only after approval
+
+## Why A Skill
+
+This workflow is larger than a single query or script:
+- it requires guided interaction
+- it needs repeated access to a known database schema
+- it has a human approval gate
+- it benefits from a reusable procedure and helper scripts
+
+So the right shape is a reusable Codex skill plus a few deterministic helper scripts.
+
+## Scope
+
+### V1 In Scope
+
+- interactive workflow
+- one course at a time
+- read workspace and catalog database
+- read CLOs, PLOs, and current mappings
+- generate one Markdown review file per course
+- validate reviewed Markdown strictly
+- apply approved mappings to `course_clo_plo_mappings`
+- transactional database update
+
+### V1 Out Of Scope
+
+- automatic mapping inference across the full program in one pass
+- multi-course batch approval files
+- UI integration into the web app
+- modifying CLOs or PLO definitions themselves
+- fuzzy parsing of free-form human notes into mappings
+
+## User Workflow
+
+### Phase 1: Review Export
+
+The user asks Codex to review mappings for a workspace/course.
+
+The skill asks for missing inputs if not already given:
+- workspace path
+- program code
+- term code
+- course number
+- mode: `export-review` or `apply-reviewed`
+
+Then the skill:
+1. resolves the workspace
+2. opens the catalog database
+3. loads:
+   - course identity
+   - course term record
+   - CLO rows
+   - PLO definitions for the selected program
+   - current CLO-PLO mappings
+4. writes a Markdown review file for that course into a review/export folder
+
+### Phase 2: Human Review
+
+The human reviews the Markdown file and edits the approval fields.
+
+### Phase 3: Apply Approved Review
+
+The user asks Codex to apply the reviewed mapping file.
+
+The skill:
+1. reads the Markdown file
+2. validates that every CLO block is complete
+3. rejects the file if any required field is missing
+4. updates the DB transactionally
+
+## Interaction Model
+
+The skill must be interactive.
+
+If the user does not provide enough information, the skill should ask for it explicitly rather than guessing.
+
+Required inputs:
+- workspace path
+- program: `MATH`, `AS`, or `DATA`
+- term code
+- course number
+- desired mode:
+  - export review file
+  - apply approved review file
+
+Optional inputs:
+- exact review file path
+- custom export location inside workspace
+
+## Workspace Assumptions
+
+The skill works against the existing managed workspace structure:
+
+```text
+<workspace>/
+  index/
+  inbox/
+  processed/
+  runs/
+  catalog/
+    abet_syllabus_catalog.sqlite
+  exports/
+  logs/
+```
+
+The skill reads from:
+- `catalog/abet_syllabus_catalog.sqlite`
+
+The skill writes review Markdown files to:
+- `<workspace>/exports/clo-plo-review/`
+
+## Review File Format
+
+The review file should be Markdown, human-readable first.
+
+Each file covers one course only in v1.
+
+### File Header
+
+The file should contain:
+- program
+- term
+- course number
+- course title
+- department
+- coordinator
+
+### PLO Reference Section
+
+List all PLOs for the selected program with:
+- PLO code
+- PLO label
+- full description
+
+### Current Mapping Section
+
+Show the currently stored mappings, if any.
+
+### CLO Review Section
+
+For each CLO, include:
+
+```md
+### CLO 1.1
+CLO Text: Explain the concept of sequences and series.
+
+Suggested PLOs: [1, 4]
+Approve: yes
+Final PLOs: [1, 4]
+Notes:
+```
+
+Rules:
+- `Suggested PLOs` is informational
+- `Approve` must be `yes` or `no`
+- `Final PLOs` is authoritative
+- `Final PLOs: []` is allowed as an explicit no-mapping decision
+- `Notes` is optional
+
+## Validation Rules
+
+The updater must be strict.
+
+For every CLO block:
+- the block must exist
+- `Approve` must be present and be `yes` or `no`
+- `Final PLOs` must be present
+- every listed PLO code must exist for the selected program
+
+If any CLO block is incomplete or invalid:
+- abort the whole update
+- do not partially update the database
+- report the exact validation failures
+
+## Database Update Rules
+
+Target table:
+- `course_clo_plo_mappings`
+
+Related tables used for validation:
+- `courses`
+- `course_terms`
+- `course_clos`
+- `plo_definitions`
+
+Update behavior:
+1. resolve the course and term
+2. resolve all course CLO rows
+3. resolve selected PLO definition rows for the program
+4. start a transaction
+5. delete existing mappings for the selected course’s CLO rows
+6. insert the approved mappings from `Final PLOs`
+7. commit only if all inserts succeed
+
+If anything fails:
+- roll back the transaction
+
+## Helper Script Responsibilities
+
+The skill should use deterministic helper scripts for fragile operations.
+
+Recommended scripts:
+
+### `scripts/export_review.py` or `scripts/export_review.ts`
+
+Responsibilities:
+- read workspace/catalog path
+- query course/CLO/PLO/mapping data
+- emit Markdown review file
+
+### `scripts/validate_review.py` or `scripts/validate_review.ts`
+
+Responsibilities:
+- parse the Markdown review file
+- validate completeness and correctness
+- produce a structured validation result
+
+### `scripts/apply_review.py` or `scripts/apply_review.ts`
+
+Responsibilities:
+- parse reviewed Markdown
+- validate again before write
+- update mappings transactionally
+
+## Skill Triggering
+
+The explicit skill name should be used because it is clear and searchable:
+- `clo-plo-mapping-review`
+
+Example trigger intents:
+- “Use clo-plo-mapping-review for MATH102”
+- “Export a CLO-PLO mapping review for this workspace”
+- “Apply the reviewed CLO-PLO mapping file”
+
+## Safety Principles
+
+- never write to the DB without a reviewed file
+- never partially apply incomplete reviews
+- never infer missing approval fields
+- always prefer validation failure over silent guessing
+- treat `Final PLOs` as the only authoritative mapping field
+
+## Recommended V1 Implementation Shape
+
+Skill folder:
+
+```text
+C:\Users\mmogi\.codex\skills\clo-plo-mapping-review/
+  SKILL.md
+  agents/
+    openai.yaml
+  scripts/
+    export_review.py
+    validate_review.py
+    apply_review.py
+  references/
+    db-schema.md
+    review-format.md
+```
+
+## Open Dependency
+
+The skill becomes much more valuable once the catalog contains real `course_clo_plo_mappings`.
+
+Today the query/export/apply path can still be built, but meaningful review depends on:
+- existing mappings already present, or
+- a later helper that proposes initial suggested mappings
+
+V1 does not require automatic suggestion quality to be perfect, because the human reviewer is authoritative.
