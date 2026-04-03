@@ -40,3 +40,34 @@ test('shows the end-to-end beta workflow and parses an uploaded source file', as
   expect(screen.getByText('Summary')).toBeInTheDocument();
   expect(screen.getByText('Software Engineering I')).toBeInTheDocument();
 });
+
+test('hides the missing fields review panel when the uploaded draft is already complete', async () => {
+  render(<App />);
+
+  const file = new File(
+    [
+      [
+        'Department: ICS',
+        'Course Code: ICS 321',
+        'Course Title: Software Engineering I',
+        'Course Instructor/Coordinator: Dr. Ada Lovelace',
+        'Catalog Course Description: Introduction to software engineering.',
+        '4. Pre-requisites for this course (if any): ICS 253',
+        '1. Required Textbooks',
+        'Software Engineering, 10th Edition',
+      ].join('\n'),
+    ],
+    'complete-course-spec.txt',
+    { type: 'text/plain' },
+  );
+
+  fireEvent.change(screen.getByLabelText('Source file'), {
+    target: { files: [file] },
+  });
+
+  await waitFor(() => {
+    expect(screen.getByText('Software Engineering I')).toBeInTheDocument();
+  });
+
+  expect(screen.queryByRole('heading', { name: 'Missing Fields Review' })).not.toBeInTheDocument();
+});

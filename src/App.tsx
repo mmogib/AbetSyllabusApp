@@ -108,29 +108,31 @@ export default function App() {
         }}
       />
 
-      <section className="review-panel" aria-labelledby="review-panel-title">
-        <div className="section-heading">
-          <div>
-            <h2 id="review-panel-title">Missing Fields Review</h2>
-            <p>
-              Complete any required information not resolved automatically.
-            </p>
+      {reviewSlice.reviewState.unresolvedFields.length > 0 ? (
+        <section className="review-panel" aria-labelledby="review-panel-title">
+          <div className="section-heading">
+            <div>
+              <h2 id="review-panel-title">Missing Fields Review</h2>
+              <p>
+                Complete any required information not resolved automatically.
+              </p>
+            </div>
+            <span className="review-panel__count">
+              {reviewSlice.reviewState.unresolvedFields.length} open
+            </span>
           </div>
-          <span className="review-panel__count">
-            {reviewSlice.reviewState.unresolvedFields.length} open
-          </span>
-        </div>
 
-        <ReviewForm
-          fields={reviewSlice.fields}
-          onChange={(path, value) => {
-            setAppState((current) => updateDraftField(current, path, value));
-          }}
-          onResolve={(path) => {
-            setAppState((current) => resolveDraftField(current, path));
-          }}
-        />
-      </section>
+          <ReviewForm
+            fields={reviewSlice.fields}
+            onChange={(path, value) => {
+              setAppState((current) => updateDraftField(current, path, value));
+            }}
+            onResolve={(path) => {
+              setAppState((current) => resolveDraftField(current, path));
+            }}
+          />
+        </section>
+      ) : null}
 
       <ProjectPanel
         draft={appState.draft}
