@@ -48,10 +48,8 @@ body {
 }
 
 .app-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+  display: grid;
+  gap: 0.75rem;
 }
 
 .section-heading {
@@ -130,33 +128,6 @@ body {
 
 .summary-grid__wide {
   grid-column: 1 / -1;
-}
-
-.status-panel {
-  display: grid;
-  gap: 0.35rem;
-  min-width: 15rem;
-  padding: 1rem 1.1rem;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #0f172a, #1e293b);
-  color: #f8fafc;
-}
-
-.status-panel__label {
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.72);
-}
-
-.status-panel__value {
-  font-size: 1.05rem;
-}
-
-.status-panel__detail {
-  font-size: 0.94rem;
-  line-height: 1.45;
-  color: rgba(226, 232, 240, 0.85);
 }
 
 .review-form {

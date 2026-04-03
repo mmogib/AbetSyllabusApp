@@ -29,4 +29,5 @@ test('renders the beta shell title and subtitle', () => {
     screen.getByText('Save an optional AI provider key in this browser session for suggestion support.'),
   ).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'AI Provider & API Key' })).toBeInTheDocument();
+  expect(screen.queryByLabelText('Review status')).not.toBeInTheDocument();
 });

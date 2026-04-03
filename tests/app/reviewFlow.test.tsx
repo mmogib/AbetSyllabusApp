@@ -33,7 +33,7 @@ test('explicitly resolving a field removes it from the unresolved list and updat
 
   expect(screen.queryByLabelText('Instructor Name')).not.toBeInTheDocument();
   expect(screen.getByText('6 open')).toBeInTheDocument();
-  expect(screen.getByLabelText('Review status')).toHaveTextContent('6 fields open');
+  expect(screen.queryByLabelText('Review status')).not.toBeInTheDocument();
 });
 
 test('clearing a field returns it to missing state without hiding it first', () => {

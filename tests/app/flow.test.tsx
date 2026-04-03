@@ -9,6 +9,7 @@ test('shows the end-to-end beta workflow and parses an uploaded source file', as
   expect(screen.getByText('AI Provider & API Key')).toBeInTheDocument();
   expect(screen.getByText('Missing Fields Review')).toBeInTheDocument();
   expect(screen.getByText('Project')).toBeInTheDocument();
+  expect(screen.queryByLabelText('Review status')).not.toBeInTheDocument();
 
   const file = new File(
     [
@@ -29,7 +30,7 @@ test('shows the end-to-end beta workflow and parses an uploaded source file', as
   });
 
   await waitFor(() => {
-    expect(screen.getByLabelText('Review status')).toHaveTextContent('2 fields open');
+    expect(screen.getAllByText('2 open').length).toBeGreaterThan(0);
   });
   expect(
     screen.getByText('Loaded course-spec.txt. Review any remaining missing fields below.'),

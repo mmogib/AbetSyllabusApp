@@ -3,7 +3,6 @@ import { ApiKeyPanel } from './components/ApiKeyPanel';
 import { FileUpload } from './components/FileUpload';
 import { ProjectPanel } from './components/ProjectPanel';
 import { ReviewForm } from './components/ReviewForm';
-import { StatusPanel } from './components/StatusPanel';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
 import { SummaryPanel } from './components/SummaryPanel';
 import { TermPanel } from './components/TermPanel';
@@ -49,7 +48,6 @@ export default function App() {
             Generate ABET-aligned course syllabus documents from course specification files.
           </p>
         </div>
-        <StatusPanel reviewState={reviewSlice.reviewState} />
       </div>
 
       <TermPanel
