@@ -51,6 +51,10 @@ This is a static Vite app and is configured for Netlify:
 
 If you connect the repository to Netlify, the included `netlify.toml` should be enough for a standard deploy.
 
+Current public endpoints:
+- GitHub repository: `https://github.com/mmogib/AbetSyllabusApp`
+- Live site: `https://abet-syllabus-app.netlify.app`
+
 ## Testing Workflow
 
 The fastest way to improve parser coverage is to test a real file, compare the parsed output with the source, and then patch the exact failure with a regression test.

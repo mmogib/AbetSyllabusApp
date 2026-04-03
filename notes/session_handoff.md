@@ -10,6 +10,8 @@ Date: 2026-04-03
 - Added academic term handling and generated DOCX filenames such as `T252MATH101AbetSyllabus.docx`.
 - Switched the output generator to `output_template/ABETSyllabusTemplate2.docx`.
 - Adjusted DOCX generation so template-native numbering and bullets are preserved.
+- Published the repo at `https://github.com/mmogib/AbetSyllabusApp`.
+- Published the live beta at `https://abet-syllabus-app.netlify.app`.
 
 ## Verified State
 

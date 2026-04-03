@@ -15,6 +15,10 @@
 
 The app is now ready for friend-level beta testing.
 
+Public endpoints:
+- GitHub: `https://github.com/mmogib/AbetSyllabusApp`
+- Netlify: `https://abet-syllabus-app.netlify.app`
+
 Working pieces:
 - upload flow for local source files
 - browser-side extraction for `PDF`, `DOCX`, and `TXT`
