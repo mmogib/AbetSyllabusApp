@@ -99,8 +99,7 @@ export function FileUpload({ onLoaded }: FileUploadProps) {
         <div>
           <h2 id="upload-panel-title">Upload Source File</h2>
           <p>
-            Parse a course spec locally from PDF, DOCX, or TXT. If a PDF extracts
-            poorly, paste key values into the review form as a manual fallback.
+            Upload a course specification file to detect syllabus information.
           </p>
         </div>
       </div>

@@ -46,8 +46,9 @@ export function SummaryPanel({
         <div>
           <h2 id="summary-panel-title">Summary</h2>
           <p>
-            Detected values from <strong>{sourceFileName}</strong>. Any missing required
-            fields remain below in the review form.
+            Review the key detected course information before download.
+            {' '}
+            <strong>{sourceFileName}</strong>
           </p>
         </div>
         <div className="summary-panel__actions">

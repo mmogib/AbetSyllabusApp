@@ -44,9 +44,9 @@ export default function App() {
     <main className="app-shell">
       <div className="app-hero">
         <div>
-          <h1>ABET-SYLLABUS Beta</h1>
+          <h1>ABET Syllabus Generator</h1>
           <p className="app-subtitle">
-            A minimal static shell for the beta release.
+            Generate ABET-aligned course syllabus documents from course specification files.
           </p>
         </div>
         <StatusPanel reviewState={reviewSlice.reviewState} />
@@ -100,8 +100,7 @@ export default function App() {
           <div>
             <h2 id="review-panel-title">Missing Fields Review</h2>
             <p>
-              Edit unresolved fields directly in the browser. The list only shows
-              items that still need attention.
+              Complete any required information not resolved automatically.
             </p>
           </div>
           <span className="review-panel__count">{reviewSlice.fields.length} open</span>

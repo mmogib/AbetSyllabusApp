@@ -57,7 +57,7 @@ export function ProjectPanel({ draft, extractedText, onImport }: ProjectPanelPro
       <div className="section-heading">
         <div>
           <h2 id="project-panel-title">Project</h2>
-          <p>Export or import the current local draft as JSON.</p>
+          <p>Export or import a working draft as a local JSON file.</p>
         </div>
       </div>
 

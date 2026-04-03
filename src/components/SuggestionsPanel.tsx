@@ -80,8 +80,7 @@ export function SuggestionsPanel({
         <div>
           <h2 id="suggestions-panel-title">AI Suggestions</h2>
           <p>
-            Use your session API key to prefill unresolved fields with evidence-backed
-            suggestions from the extracted text.
+            Use optional AI assistance to fill unresolved fields.
           </p>
         </div>
       </div>

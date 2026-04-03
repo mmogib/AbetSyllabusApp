@@ -68,7 +68,7 @@ export function ApiKeyPanel({
       <div>
         <h2 id="api-key-panel-title">AI Provider & API Key</h2>
         <p>
-          Optional. Stored in this browser session only and used later if AI suggestions are enabled.
+          Save an optional AI provider key in this browser session for suggestion support.
         </p>
       </div>
 
