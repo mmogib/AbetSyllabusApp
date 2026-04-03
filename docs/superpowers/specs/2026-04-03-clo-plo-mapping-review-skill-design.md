@@ -31,7 +31,7 @@ So the right shape is a reusable Codex skill plus a few deterministic helper scr
 ### V1 In Scope
 
 - interactive workflow
-- one course at a time
+- one course or a filtered batch of courses
 - read workspace and catalog database
 - read CLOs, PLOs, and current mappings
 - generate one Markdown review file per course
@@ -57,7 +57,10 @@ The skill asks for missing inputs if not already given:
 - workspace path
 - program code
 - term code
-- course number
+- scope:
+  - one course
+  - all courses in a term/program
+  - filtered subset by criteria
 - mode: `export-review` or `apply-reviewed`
 
 Then the skill:
@@ -69,7 +72,8 @@ Then the skill:
    - CLO rows
    - PLO definitions for the selected program
    - current CLO-PLO mappings
-4. writes a Markdown review file for that course into a review/export folder
+4. selects matching courses from the catalog
+5. writes one Markdown review file per selected course into a review/export folder
 
 ### Phase 2: Human Review
 
@@ -95,7 +99,9 @@ Required inputs:
 - workspace path
 - program: `MATH`, `AS`, or `DATA`
 - term code
-- course number
+- scope definition:
+  - exact course number, or
+  - batch selection criteria
 - desired mode:
   - export review file
   - apply approved review file
@@ -103,6 +109,10 @@ Required inputs:
 Optional inputs:
 - exact review file path
 - custom export location inside workspace
+- filter criteria for batch export such as:
+  - only courses with no mappings
+  - only courses with incomplete mappings
+  - explicit course-number prefix or list
 
 ## Workspace Assumptions
 
@@ -130,7 +140,9 @@ The skill writes review Markdown files to:
 
 The review file should be Markdown, human-readable first.
 
-Each file covers one course only in v1.
+Each file still covers one course only.
+
+For batch review, the skill generates many one-course files, not one giant combined file.
 
 ### File Header
 
@@ -223,7 +235,11 @@ Recommended scripts:
 Responsibilities:
 - read workspace/catalog path
 - query course/CLO/PLO/mapping data
-- emit Markdown review file
+- support scope selection:
+  - single course
+  - all courses in a term/program
+  - filtered subsets
+- emit one Markdown review file per selected course
 
 ### `scripts/validate_review.py` or `scripts/validate_review.ts`
 
@@ -274,6 +290,59 @@ C:\Users\mmogi\.codex\skills\clo-plo-mapping-review/
     db-schema.md
     review-format.md
 ```
+
+## Scope Selection Model
+
+The skill should support three scope modes:
+
+### 1. Single Course
+
+Inputs:
+- workspace
+- program
+- term
+- course number
+
+Output:
+- one review Markdown file
+
+### 2. Whole Term / Program
+
+Inputs:
+- workspace
+- program
+- term
+
+Output:
+- one review Markdown file per course in that program/term
+
+### 3. Filtered Batch
+
+Inputs:
+- workspace
+- program
+- term
+- one or more criteria
+
+Recommended first criteria:
+- `unmapped-only`
+- `has-no-mappings`
+- `has-some-mappings`
+- explicit course list
+
+Output:
+- one review Markdown file per matched course
+
+## Why Batch Is Still One File Per Course
+
+Even if AI can reason across many courses, human review quality will drop if everything is combined into one giant document.
+
+So the better design is:
+- selection can be batch
+- review files remain one course per file
+- apply step can process one reviewed file or a folder of reviewed files
+
+This keeps the review surface readable while still allowing large-term coverage.
 
 ## Open Dependency
 
