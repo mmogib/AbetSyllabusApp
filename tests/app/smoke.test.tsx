@@ -5,6 +5,7 @@ test('renders the beta shell title and subtitle', () => {
   render(<App />);
 
   expect(screen.getByRole('heading', { name: 'ABET Syllabus Generator' })).toBeInTheDocument();
+  expect(screen.getByText('Version 0.1.0')).toBeInTheDocument();
   expect(
     screen.getByText(
       'Generate ABET-aligned course syllabus documents from course specification files.',

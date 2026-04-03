@@ -24,6 +24,8 @@ import {
   updateDraftField,
 } from './state/actions';
 
+const appVersion = __APP_VERSION__;
+
 export default function App() {
   const [appState, setAppState] = useState(() => createAppState());
   const [provider, setProvider] = useState<AiProvider>(() => readSessionProvider());
@@ -45,6 +47,7 @@ export default function App() {
       <div className="app-hero">
         <div>
           <h1>ABET Syllabus Generator</h1>
+          <p className="app-version">Version {appVersion}</p>
           <p className="app-subtitle">
             Generate ABET-aligned course syllabus documents from course specification files.
           </p>
