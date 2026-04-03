@@ -64,6 +64,7 @@ body {
 .summary-panel,
 .api-key-panel,
 .suggestions-panel,
+.instructor-panel,
 .upload-panel,
 .term-panel,
 .project-panel {
@@ -137,6 +138,7 @@ body {
 
 .upload-panel__field,
 .api-key-panel__field,
+.instructor-panel__field,
 .term-panel__field,
 .project-panel__field {
   display: grid;
@@ -145,6 +147,7 @@ body {
 
 .upload-panel__field span,
 .api-key-panel__field span,
+.instructor-panel__field span,
 .term-panel__field span,
 .project-panel__field span {
   font-weight: 700;
@@ -153,6 +156,7 @@ body {
 .upload-panel__field input,
 .api-key-panel__field select,
 .api-key-panel__field input,
+.instructor-panel__field input,
 .term-panel__field select,
 .project-panel__field input,
 .project-panel__field textarea {
@@ -176,6 +180,7 @@ body {
 .api-key-panel,
 .suggestions-panel,
 .project-panel,
+.instructor-panel,
 .term-panel,
 .upload-panel {
   display: grid;

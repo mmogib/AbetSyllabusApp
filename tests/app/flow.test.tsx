@@ -35,6 +35,8 @@ test('shows the end-to-end beta workflow and parses an uploaded source file', as
   expect(
     screen.getByText('Loaded course-spec.txt. Review any remaining missing fields below.'),
   ).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Instructor Name' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Instructor name')).toHaveValue('Dr. Ada Lovelace');
   expect(screen.getByText('Summary')).toBeInTheDocument();
   expect(screen.getByText('Software Engineering I')).toBeInTheDocument();
 });

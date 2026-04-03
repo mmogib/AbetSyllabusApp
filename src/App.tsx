@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ApiKeyPanel } from './components/ApiKeyPanel';
 import { FileUpload } from './components/FileUpload';
+import { InstructorPanel } from './components/InstructorPanel';
 import { ProjectPanel } from './components/ProjectPanel';
 import { ReviewForm } from './components/ReviewForm';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
@@ -65,13 +66,24 @@ export default function App() {
       />
 
       {hasUploadedSource ? (
-        <SummaryPanel
-          draft={appState.draft}
-          canGenerate={reviewSlice.reviewState.canGenerate}
-          fileName={generationFileName}
-          sourceFileName={appState.sourceFileName ?? ''}
-          openFieldCount={reviewSlice.fields.length}
-        />
+        <>
+          <InstructorPanel
+            value={appState.draft.courseIdentity.instructorName}
+            onChange={(value) => {
+              setAppState((current) =>
+                updateDraftField(current, 'courseIdentity.instructorName', value),
+              );
+            }}
+          />
+
+          <SummaryPanel
+            draft={appState.draft}
+            canGenerate={reviewSlice.reviewState.canGenerate}
+            fileName={generationFileName}
+            sourceFileName={appState.sourceFileName ?? ''}
+            openFieldCount={reviewSlice.reviewState.unresolvedFields.length}
+          />
+        </>
       ) : null}
 
       <ApiKeyPanel
@@ -101,7 +113,9 @@ export default function App() {
               Complete any required information not resolved automatically.
             </p>
           </div>
-          <span className="review-panel__count">{reviewSlice.fields.length} open</span>
+          <span className="review-panel__count">
+            {reviewSlice.reviewState.unresolvedFields.length} open
+          </span>
         </div>
 
         <ReviewForm

@@ -75,12 +75,14 @@ export function getReviewSlice(draft: SyllabusDraft): ReviewSlice {
 
   return {
     reviewState,
-    fields: reviewState.unresolvedFields.map((path) => ({
-      path,
-      label: reviewFieldLabels[path].label,
-      value: readDraftValue(draft, path),
-      multiline: reviewFieldLabels[path].multiline,
-      meta: readDraftMeta(draft, path),
-    })),
+    fields: reviewState.unresolvedFields
+      .filter((path) => path !== 'courseIdentity.instructorName')
+      .map((path) => ({
+        path,
+        label: reviewFieldLabels[path].label,
+        value: readDraftValue(draft, path),
+        multiline: reviewFieldLabels[path].multiline,
+        meta: readDraftMeta(draft, path),
+      })),
   };
 }

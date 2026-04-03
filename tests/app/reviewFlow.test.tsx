@@ -10,42 +10,71 @@ import App from '../../src/App';
 test('keeps an edited unresolved field visible while the user is filling it in', () => {
   render(<App />);
 
-  const input = screen.getByLabelText('Instructor Name');
+  const input = screen.getByLabelText('Department');
 
-  fireEvent.change(input, { target: { value: 'Dr. A. Instructor' } });
+  fireEvent.change(input, { target: { value: 'ICS' } });
 
-  expect(screen.getByLabelText('Instructor Name')).toHaveValue('Dr. A. Instructor');
+  expect(screen.getByLabelText('Department')).toHaveValue('ICS');
   expect(screen.getByText('7 open')).toBeInTheDocument();
 });
 
-test('explicitly resolving a field removes it from the unresolved list and updates status', () => {
+test('editing the instructor field above summary updates it without using the review list', async () => {
   render(<App />);
 
-  const input = screen.getByLabelText('Instructor Name');
+  const file = new File(
+    [
+      [
+        'Department: ICS',
+        'Course Code: ICS 321',
+        'Course Title: Software Engineering I',
+        'Course Instructor/Coordinator: Dr. Ada Lovelace',
+        'Catalog Course Description: Introduction to software engineering.',
+      ].join('\n'),
+    ],
+    'course-spec.txt',
+    { type: 'text/plain' },
+  );
+
+  fireEvent.change(screen.getByLabelText('Source file'), {
+    target: { files: [file] },
+  });
+
+  const input = await screen.findByLabelText('Instructor name');
   fireEvent.change(input, { target: { value: 'Dr. A. Instructor' } });
 
-  const resolveButton = screen
-    .getAllByRole('button', { name: 'Mark resolved' })
-    .find((button) => !button.hasAttribute('disabled'));
-
-  expect(resolveButton).toBeDefined();
-  fireEvent.click(resolveButton!);
-
-  expect(screen.queryByLabelText('Instructor Name')).not.toBeInTheDocument();
-  expect(screen.getByText('6 open')).toBeInTheDocument();
+  expect(screen.getByLabelText('Instructor name')).toHaveValue('Dr. A. Instructor');
+  expect(screen.getAllByText('2 open').length).toBeGreaterThan(0);
   expect(screen.queryByLabelText('Review status')).not.toBeInTheDocument();
 });
 
-test('clearing a field returns it to missing state without hiding it first', () => {
+test('clearing a field returns it to missing state without hiding it first', async () => {
   render(<App />);
 
-  const input = screen.getByLabelText('Instructor Name');
+  const file = new File(
+    [
+      [
+        'Department: ICS',
+        'Course Code: ICS 321',
+        'Course Title: Software Engineering I',
+        'Course Instructor/Coordinator: Dr. Ada Lovelace',
+        'Catalog Course Description: Introduction to software engineering.',
+      ].join('\n'),
+    ],
+    'course-spec.txt',
+    { type: 'text/plain' },
+  );
+
+  fireEvent.change(screen.getByLabelText('Source file'), {
+    target: { files: [file] },
+  });
+
+  const input = await screen.findByLabelText('Instructor name');
 
   fireEvent.change(input, { target: { value: 'Dr. A. Instructor' } });
-  fireEvent.change(screen.getByLabelText('Instructor Name'), { target: { value: '' } });
+  fireEvent.change(screen.getByLabelText('Instructor name'), { target: { value: '' } });
 
-  expect(screen.getByLabelText('Instructor Name')).toHaveValue('');
-  expect(screen.getByText('7 open')).toBeInTheDocument();
+  expect(screen.getByLabelText('Instructor name')).toHaveValue('');
+  expect(screen.getAllByText('3 open').length).toBeGreaterThan(0);
 });
 
 test('applies ai suggestions into the unresolved review flow', async () => {
@@ -106,7 +135,7 @@ test('applies ai suggestions into the unresolved review flow', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Suggest with AI' }));
 
   await waitFor(() => {
-    expect(screen.getByLabelText('Instructor Name')).toHaveValue('Dr. Ada Lovelace');
+    expect(screen.getByLabelText('Instructor name')).toHaveValue('Dr. Ada Lovelace');
   });
 });
 
@@ -165,6 +194,6 @@ test('applies openrouter ai suggestions into the unresolved review flow', async 
   fireEvent.click(screen.getByRole('button', { name: 'Suggest with AI' }));
 
   await waitFor(() => {
-    expect(screen.getByLabelText('Instructor Name')).toHaveValue('Dr. Grace Hopper');
+    expect(screen.getByLabelText('Instructor name')).toHaveValue('Dr. Grace Hopper');
   });
 });

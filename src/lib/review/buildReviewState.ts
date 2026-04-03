@@ -27,6 +27,10 @@ function isRequiredFieldResolved(draft: SyllabusDraft, path: RequiredFieldPath):
     return false;
   }
 
+  if (path === 'courseIdentity.instructorName') {
+    return true;
+  }
+
   return meta?.status === 'resolved' || isHighConfidenceDeterministic(meta);
 }
 
