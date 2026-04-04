@@ -633,28 +633,7 @@ function extractTopics(lines: readonly string[]): Topic[] {
 }
 
 function extractDesignation(lines: readonly string[]): string {
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-
-    if (!/^2\.\s+Course Type:?$/i.test(line)) {
-      continue;
-    }
-
-    const collected: string[] = [];
-    for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
-      const nextLine = lines[cursor];
-
-      if (matchesStopPattern(nextLine, SIMPLE_SECTION_STOP_PATTERNS)) {
-        break;
-      }
-
-      collected.push(nextLine);
-    }
-
-    return normalizeValue(collected.join(' '));
-  }
-
-  return '';
+  return extractSectionValue(lines, ['Course Type'], SIMPLE_SECTION_STOP_PATTERNS);
 }
 
 export function parseCourseSpec(text: string): SyllabusDraft {

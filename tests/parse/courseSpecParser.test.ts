@@ -741,6 +741,22 @@ None
   expect(draft.courseInformation.corequisites).toBe('None');
 });
 
+test('extracts designation from inline course type lines used in real math sources', () => {
+  const text = `
+Course Title: Numerical Computing
+Course Code: MATH371
+Department: Mathematics
+Course Instructor/Coordinator: Dr. Example
+2.  Course Type: Required Department
+1. Catalog Course Description (General description in the form used in Bulletin)
+Numerical methods.
+  `;
+
+  const draft = parseCourseSpec(text);
+
+  expect(draft.courseInformation.designation).toBe('Required Department');
+});
+
 test('stops supplemental materials before facilities section in DATA 201 style docx text', () => {
   const text = `
 3. List Recommended Textbooks and Reference Material (Journals, Reports, etc)
