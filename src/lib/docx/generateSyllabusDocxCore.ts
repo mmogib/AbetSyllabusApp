@@ -4,6 +4,7 @@ import type { CreditsCategorization, SyllabusDraft } from '../../types/schema';
 const WORDPROCESSING_NS =
   'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
+const TEMPLATE_CHECK_MARK = '\u221A';
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -206,9 +207,9 @@ function populateDesignationRow(row: Element, designation: string): void {
   const cells = getDirectCells(row);
   const normalizedDesignation = normalizeDesignation(designation);
 
-  setCellText(cells[2], normalizedDesignation === 'required' ? 'âˆš' : '');
-  setCellText(cells[3], normalizedDesignation === 'selected-elective' ? 'âˆš' : '');
-  setCellText(cells[4], normalizedDesignation === 'elective' ? 'âˆš' : '');
+  setCellText(cells[2], normalizedDesignation === 'required' ? TEMPLATE_CHECK_MARK : '');
+  setCellText(cells[3], normalizedDesignation === 'selected-elective' ? TEMPLATE_CHECK_MARK : '');
+  setCellText(cells[4], normalizedDesignation === 'elective' ? TEMPLATE_CHECK_MARK : '');
 }
 
 function populateCreditsCategorizationRow(

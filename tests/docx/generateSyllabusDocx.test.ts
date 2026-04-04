@@ -144,7 +144,7 @@ async function buildTemplateBuffer(): Promise<ArrayBuffer> {
         'Selected Elective ( SE ) (from a specified group of electives)',
         'Elective ( E ) (Optional, Open, Free)',
       ],
-      ['', '', 'âˆš', '', ''],
+      ['', '', '\u221A', '', ''],
     ]),
     '<w:p/>',
     '<w:p/>',
