@@ -6,5 +6,6 @@ batch_output/
 .netlify/
 .DS_Store
 coverage/
+tmp/
 tmp_*.txt
 __env.txt
