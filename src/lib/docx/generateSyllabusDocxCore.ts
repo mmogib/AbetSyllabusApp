@@ -1,10 +1,9 @@
 import JSZip from 'jszip';
-import type { SyllabusDraft } from '../../types/schema';
+import type { CreditsCategorization, SyllabusDraft } from '../../types/schema';
 
 const WORDPROCESSING_NS =
   'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
-
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -212,6 +211,17 @@ function populateDesignationRow(row: Element, designation: string): void {
   setCellText(cells[4], normalizedDesignation === 'elective' ? 'âˆš' : '');
 }
 
+function populateCreditsCategorizationRow(
+  row: Element,
+  creditsCategorization: CreditsCategorization,
+): void {
+  const cells = getDirectCells(row);
+
+  setCellText(cells[1], creditsCategorization.mathAndBasicSciences);
+  setCellText(cells[2], creditsCategorization.engineeringTopics);
+  setCellText(cells[3], creditsCategorization.other);
+}
+
 function populateLearningOutcomes(rows: readonly Element[], draft: SyllabusDraft): void {
   const outcomeRows = rows.slice(3, 10);
 
@@ -251,6 +261,7 @@ function populateTemplateDocument(document: XMLDocument, draft: SyllabusDraft): 
   setCellText(getDirectCells(identityRows[3])[1], draft.courseIdentity.courseTitle);
   setCellText(getDirectCells(creditRows[1])[1], draft.courseIdentity.creditsText);
   setCellText(getDirectCells(creditRows[2])[1], formatCreditsTuple(draft.courseIdentity.creditsText));
+  populateCreditsCategorizationRow(creditRows[4], draft.courseIdentity.creditsCategorization);
   setCellText(getDirectCells(instructorRows[1])[1], draft.courseIdentity.instructorName);
   setCellText(getDirectCells(materialsRows[1])[1], draft.materials.textbook || 'None');
   setCellParagraphText(

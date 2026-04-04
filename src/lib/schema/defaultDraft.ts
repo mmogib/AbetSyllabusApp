@@ -1,4 +1,9 @@
-import type { FieldMeta, FieldPath, SyllabusDraft } from '../../types/schema';
+import type {
+  CreditsCategorization,
+  FieldMeta,
+  FieldPath,
+  SyllabusDraft,
+} from '../../types/schema';
 import { requiredFieldPaths } from './requiredFields';
 import { getCurrentTermCode } from '../term/academicTerms';
 
@@ -18,6 +23,14 @@ function buildReviewMetadata(): Partial<Record<FieldPath, FieldMeta>> {
   );
 }
 
+function createEmptyCreditsCategorization(): CreditsCategorization {
+  return {
+    mathAndBasicSciences: '',
+    engineeringTopics: '',
+    other: '',
+  };
+}
+
 export function createEmptyDraft(): SyllabusDraft {
   return {
     courseIdentity: {
@@ -26,6 +39,7 @@ export function createEmptyDraft(): SyllabusDraft {
       courseTitle: '',
       instructorName: '',
       creditsText: '',
+      creditsCategorization: createEmptyCreditsCategorization(),
     },
     materials: {
       textbook: '',

@@ -10,6 +10,11 @@ function expectIdentity(
     catalogDescription: string;
     prerequisites?: string;
     creditsText?: string;
+    creditsCategorization?: {
+      mathAndBasicSciences: string;
+      engineeringTopics: string;
+      other: string;
+    };
     textbook?: string;
     supplementalMaterials?: string;
   },
@@ -19,6 +24,13 @@ function expectIdentity(
   expect(draft.courseIdentity.department).toBe(expected.department);
   expect(draft.courseIdentity.instructorName).toBe(expected.instructorName);
   expect(draft.courseIdentity.creditsText).toBe(expected.creditsText ?? '');
+  expect(draft.courseIdentity.creditsCategorization).toEqual(
+    expected.creditsCategorization ?? {
+      mathAndBasicSciences: '',
+      engineeringTopics: '',
+      other: '',
+    },
+  );
   expect(draft.courseInformation.catalogDescription).toBe(
     expected.catalogDescription,
   );
@@ -65,6 +77,11 @@ Department                                Info. & Computer Science Dept.
 Course Instructor/Coordinator: Wasfi Al-Khatib
 1. Course Credit Hours:
 3-0-3
+1. Subject Area Credit Hours:
+Engineering / Computer Science Mathematics/Science Humanities
+3.00 0 0
+Business General Education Other Subject Areas
+0 0 0
 2. Course Pre-requisites:
 • COE 292: Introduction to AI
 • MATH 208: Intro. Diff. Eq & Lin. Algebra
@@ -84,9 +101,120 @@ None
     prerequisites:
       'COE 292: Introduction to AI MATH 208: Intro. Diff. Eq & Lin. Algebra',
     creditsText: '3-0-3',
+    creditsCategorization: {
+      mathAndBasicSciences: '0',
+      engineeringTopics: '3',
+      other: '0',
+    },
     textbook: 'None',
   });
   expect(draft.courseInformation.corequisites).toBe('');
+});
+
+test('derives credits categorization from DOCX-style area credit hours', () => {
+  const text = `
+Course Title: Probability for Data Science
+Course Code: DATA 201
+Department: Mathematics
+Course Instructor/Coordinator: Dr. Mohammed Alshahrani
+1. Course Credit Hours:
+3-0-3
+Area Credit Hours
+(Indicate the number of credit hours against the classification below; do not exceed the course credit hours)
+Engineering/Computer Science
+Mathematics/ Science
+Business
+General Education / Social Sciences / Humanities
+Other
+0
+3
+0
+0
+0
+1. Catalog Course Description (General description in the form used in Bulletin)
+An introduction to probability and statistics for data science.
+4. Pre-requisites for this course (if any): STAT 201 and (MATH 208 or MATH 225)
+1. List Required Textbooks
+"Introduction to Probability for Data Science" by Stanley H. Chan (2021)
+  `;
+
+  const draft = parseCourseSpec(text);
+
+  expectIdentity(draft, {
+    courseTitle: 'Probability for Data Science',
+    courseNumber: 'DATA 201',
+    department: 'Mathematics',
+    instructorName: 'Dr. Mohammed Alshahrani',
+    catalogDescription: 'An introduction to probability and statistics for data science.',
+    prerequisites: 'STAT 201 and (MATH 208 or MATH 225)',
+    creditsText: '3-0-3',
+    creditsCategorization: {
+      mathAndBasicSciences: '3',
+      engineeringTopics: '0',
+      other: '0',
+    },
+    textbook: '"Introduction to Probability for Data Science" by Stanley H. Chan (2021)',
+  });
+});
+
+test('derives credits categorization from sparse DOCX row output with preserved empty cells', () => {
+  const text = `
+Course Title: Calculus I
+Course Code: MATH 101
+Department: Mathematics
+Course Instructor/Coordinator: Dr. Example
+1. Course Credit Hours:
+4-0-4
+1. Subject Area Credit Hours
+Engineering/Computer Science
+Mathematics/ Science
+Business
+General Education / Social Sciences / Humanities
+Other
+Engineering/Computer Science ||| Mathematics/ Science ||| Business ||| General Education / Social Sciences / Humanities ||| Other
+||| 4 |||  |||  |||
+1. Catalog Course Description:
+Introduction to differential calculus.
+  `;
+
+  const draft = parseCourseSpec(text);
+
+  expect(draft.courseIdentity.creditsCategorization).toEqual({
+    mathAndBasicSciences: '4',
+    engineeringTopics: '0',
+    other: '0',
+  });
+});
+
+test('does not double-count credits when the delimited value row comes after individual value lines', () => {
+  const text = `
+Course Title: Numerical Computing
+Course Code: MATH371
+Department: Mathematics
+Course Instructor/Coordinator: Dr. Example
+1. Subject Area Credit Hours (Indicate the number of credit hours against the classification below; do not exceed the course credit hours)
+Engineering/Computer Science
+Mathematics/ Science
+Business
+General Education/ Social Sciences/ Humanities
+Other
+Engineering/Computer Science ||| Mathematics/ Science ||| Business ||| General Education/ Social Sciences/ Humanities ||| Other
+0
+3
+0
+0
+0
+0 ||| 3 ||| 0 ||| 0 ||| 0
+2. Topics to be Covered
+  `;
+
+  const draft = parseCourseSpec(text);
+
+  expect(draft.courseIdentity.creditsCategorization).toEqual({
+    mathAndBasicSciences: '3',
+    engineeringTopics: '0',
+    other: '0',
+  });
 });
 
 test('extracts identity fields from the ENGL-style PDF layout', () => {
@@ -122,6 +250,28 @@ Introduction to academic reading, writing, and vocabulary. Students are exposed 
       'Introduction to academic reading, writing, and vocabulary. Students are exposed to reading texts of various genres.',
     prerequisites: 'PYP 004: Preparatory Engineering Tech.',
     textbook: 'Q: Skills for Success Level 4 Reading and Writing',
+  });
+});
+
+test('extracts instructor name when the source uses Course Instructor without coordinator', () => {
+  const text = `
+Course Title: Number Theory
+Course Code: Math427
+Department: Mathematics
+Prepared by
+Course Instructor: Dr. Ibrahim Al-Rasasi Signature: Ibrahim Al-Rasasi
+1. Catalog Course Description (General description in the form used in Bulletin)
+Introduction to number theory.
+  `;
+
+  const draft = parseCourseSpec(text);
+
+  expectIdentity(draft, {
+    courseTitle: 'Number Theory',
+    courseNumber: 'Math427',
+    department: 'Mathematics',
+    instructorName: 'Dr. Ibrahim Al-Rasasi',
+    catalogDescription: 'Introduction to number theory.',
   });
 });
 
@@ -188,6 +338,41 @@ F. Learning Resources and Facilities
     {
       title: 'Discrete Probability and Random Variables',
       durationText: '4',
+    },
+  ]);
+});
+
+test('ignores synthetic docx row lines in topics so titles do not contain delimiters', () => {
+  const text = `
+2. Topics to be Covered
+No
+List of Topics
+Contact hours
+No ||| List of Topics ||| Contact hours
+1
+Differential Equations & Mathematical Models, Integrals as General & Particular Solutions, Separable Equations & Applications, Linear First-Order Equations, Substitution Methods & Exact Equations
+10
+1 ||| Differential Equations & Mathematical Models, Integrals as General & Particular Solutions, Separable Equations & Applications, Linear First-Order Equations, Substitution Methods & Exact Equations ||| 10
+2
+Introduction to Linear Systems, Matrices and Gaussian Elimination, Reduced Row-Echelon Matrices, Matrix Operations
+2
+2 ||| Introduction to Linear Systems, Matrices and Gaussian Elimination, Reduced Row-Echelon Matrices, Matrix Operations ||| 2
+
+F. Learning Resources and Facilities
+  `;
+
+  const draft = parseCourseSpec(text);
+
+  expect(draft.topics).toEqual([
+    {
+      title:
+        'Differential Equations & Mathematical Models, Integrals as General & Particular Solutions, Separable Equations & Applications, Linear First-Order Equations, Substitution Methods & Exact Equations',
+      durationText: '10',
+    },
+    {
+      title:
+        'Introduction to Linear Systems, Matrices and Gaussian Elimination, Reduced Row-Echelon Matrices, Matrix Operations',
+      durationText: '2',
     },
   ]);
 });
@@ -299,6 +484,83 @@ C. COURSE CONTENT
     {
       outcomeCode: '3.2',
       clo: 'Design and pitch a desirable, feasible, and viable business model by going through the entrepreneurial process.',
+    },
+  ]);
+});
+
+test('ignores synthetic docx row lines so CLO text does not absorb other table columns', () => {
+  const text = `
+3.  Map Course-level Student Learning Outcomes (CLOs) to the Program-level Student Learning Outcomes (PLOs)*.
+Code
+CLOs
+Aligned PLOs (PLO’s Code)
+Teaching Strategies
+Assessment Methods
+Code ||| CLOs ||| Aligned PLOs (PLO’s Code) ||| Teaching Strategies ||| Assessment Methods
+1
+Knowledge and Understanding
+1 ||| Knowledge and Understanding
+1.1
+Identify some basic functions from their derivatives.
+K1
+Lecturing, Problem solving
+Exams, Quizzes, and Homework
+1.1 ||| Identify some basic functions from their derivatives. ||| K1 ||| Lecturing, Problem solving ||| Exams, Quizzes, and Homework
+2
+Skills
+2 ||| Skills
+2.1
+Determine the region of continuity and types of discontinuity of a function.
+S1
+Lecturing, Problem solving
+Exams, Quizzes, and Homework
+2.1 ||| Determine the region of continuity and types of discontinuity of a function. ||| S1 ||| Lecturing, Problem solving ||| Exams, Quizzes, and Homework
+
+C. COURSE CONTENT
+  `;
+
+  const draft = parseCourseSpec(text);
+
+  expect(draft.learningOutcomes).toEqual([
+    {
+      outcomeCode: '1.1',
+      clo: 'Identify some basic functions from their derivatives.',
+    },
+    {
+      outcomeCode: '2.1',
+      clo: 'Determine the region of continuity and types of discontinuity of a function.',
+    },
+  ]);
+});
+
+test('stops CLO parsing before aligned PLO code and assessment text in math208 style rows', () => {
+  const text = `
+3.  Map Course-level Student Learning Outcomes (CLOs) to the Program-level Student Learning Outcomes (PLOs)*.
+Code
+CLOs
+Aligned PLOs (PLO’s Code)
+Teaching Strategies
+Assessment Methods
+Code ||| CLOs ||| Aligned PLOs (PLO’s Code) ||| Teaching Strategies ||| Assessment Methods
+1
+Knowledge and Understanding
+1 ||| Knowledge and Understanding
+1.1
+Discuss basic concepts of differential equations and linear algebra.
+K.1
+Lecturing
+Online Homework, Quizzes and Exams: First, Second, Final
+1.1 ||| Discuss basic concepts of differential equations and linear algebra. ||| K.1 ||| Lecturing ||| Online Homework, Quizzes and Exams: First, Second, Final
+
+C. COURSE CONTENT
+  `;
+
+  const draft = parseCourseSpec(text);
+
+  expect(draft.learningOutcomes).toEqual([
+    {
+      outcomeCode: '1.1',
+      clo: 'Discuss basic concepts of differential equations and linear algebra.',
     },
   ]);
 });

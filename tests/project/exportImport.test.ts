@@ -9,6 +9,11 @@ test('round-trips a project without api keys', () => {
   draft.courseIdentity.courseTitle = 'Probability for Data Science';
   draft.courseIdentity.instructorName = 'Dr. Mohammed Alshahrani';
   draft.courseIdentity.creditsText = '3-0-3';
+  draft.courseIdentity.creditsCategorization = {
+    mathAndBasicSciences: '0',
+    engineeringTopics: '3',
+    other: '0',
+  };
   draft.materials.textbook = 'None';
   draft.courseInformation.catalogDescription = 'An introduction to probability.';
   draft.courseInformation.prerequisites = 'STAT 201';
@@ -30,6 +35,11 @@ test('round-trips a project without api keys', () => {
   expect(parsed.version).toBe(1);
   expect(parsed.savedAt).toMatch(/T/);
   expect(parsed.draft.courseIdentity.courseNumber).toBe('DATA 201');
+  expect(parsed.draft.courseIdentity.creditsCategorization).toEqual({
+    mathAndBasicSciences: '0',
+    engineeringTopics: '3',
+    other: '0',
+  });
   expect(parsed.draft.courseInformation.prerequisites).toBe('STAT 201');
   expect(parsed.draft.generationMetadata.termCode).toBe('252');
   expect(parsed.extractedText).toBe('Course Title: Probability for Data Science');
@@ -126,6 +136,29 @@ test('rejects invalid reviewMetadata keys and metadata values on import', () => 
       }),
     ),
   ).toThrow('generationMetadata.termCode must be a string');
+});
+
+test('imports legacy string credits categorization into numeric fields conservatively', () => {
+  const parsed = importProjectJson(
+    JSON.stringify({
+      version: 1,
+      savedAt: '2026-04-02T10:11:12Z',
+      draft: {
+        ...createEmptyDraft(),
+        courseIdentity: {
+          ...createEmptyDraft().courseIdentity,
+          creditsText: '3-0-3',
+          creditsCategorization: 'Engineering Topics',
+        },
+      },
+    }),
+  );
+
+  expect(parsed.draft.courseIdentity.creditsCategorization).toEqual({
+    mathAndBasicSciences: '0',
+    engineeringTopics: '3',
+    other: '0',
+  });
 });
 
 test('rejects obviously invalid project input', () => {

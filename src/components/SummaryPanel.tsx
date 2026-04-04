@@ -11,6 +11,18 @@ export interface SummaryPanelProps {
   openFieldCount: number;
 }
 
+function formatCreditsCategorization(
+  categorization: SyllabusDraft['courseIdentity']['creditsCategorization'],
+): string {
+  const values = [
+    categorization.mathAndBasicSciences || '0',
+    categorization.engineeringTopics || '0',
+    categorization.other || '0',
+  ];
+
+  return values.join(' | ');
+}
+
 export function SummaryPanel({
   draft,
   canGenerate,
@@ -80,6 +92,10 @@ export function SummaryPanel({
         <div>
           <dt>Instructor</dt>
           <dd>{draft.courseIdentity.instructorName || 'Not detected'}</dd>
+        </div>
+        <div>
+          <dt>Credits Categorization</dt>
+          <dd>{formatCreditsCategorization(draft.courseIdentity.creditsCategorization)}</dd>
         </div>
         <div className="summary-grid__wide">
           <dt>Catalog Description</dt>

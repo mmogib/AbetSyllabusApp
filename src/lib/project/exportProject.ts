@@ -1,4 +1,5 @@
 import type {
+  CreditsCategorization,
   FieldConfidence,
   FieldMeta,
   FieldPath,
@@ -28,6 +29,7 @@ const FIELD_PATHS: readonly FieldPath[] = [
   'courseIdentity.courseTitle',
   'courseIdentity.instructorName',
   'courseIdentity.creditsText',
+  'courseIdentity.creditsCategorization',
   'materials.textbook',
   'materials.supplementalMaterials',
   'courseInformation.catalogDescription',
@@ -41,6 +43,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function stringValue(value: unknown): string {
   return typeof value === 'string' ? value : '';
+}
+
+function sanitizeCreditsCategorization(value: unknown): CreditsCategorization {
+  if (!isRecord(value)) {
+    return {
+      mathAndBasicSciences: '',
+      engineeringTopics: '',
+      other: '',
+    };
+  }
+
+  return {
+    mathAndBasicSciences: stringValue(value.mathAndBasicSciences),
+    engineeringTopics: stringValue(value.engineeringTopics),
+    other: stringValue(value.other),
+  };
 }
 
 function isAllowedFieldPath(path: string): path is FieldPath {
@@ -100,6 +118,9 @@ function sanitizeDraft(draft: SyllabusDraft): SyllabusDraft {
       courseTitle: stringValue(draft.courseIdentity.courseTitle),
       instructorName: stringValue(draft.courseIdentity.instructorName),
       creditsText: stringValue(draft.courseIdentity.creditsText),
+      creditsCategorization: sanitizeCreditsCategorization(
+        draft.courseIdentity.creditsCategorization,
+      ),
     },
     materials: {
       textbook: stringValue(draft.materials.textbook),

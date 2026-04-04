@@ -39,6 +39,11 @@ test('createEmptyDraft initializes arrays and required review metadata', () => {
     courseTitle: '',
     instructorName: '',
     creditsText: '',
+    creditsCategorization: {
+      mathAndBasicSciences: '',
+      engineeringTopics: '',
+      other: '',
+    },
   });
   expect(draft.materials).toEqual({
     textbook: '',

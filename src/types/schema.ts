@@ -8,6 +8,7 @@ export type FieldPath =
   | 'courseIdentity.courseTitle'
   | 'courseIdentity.instructorName'
   | 'courseIdentity.creditsText'
+  | 'courseIdentity.creditsCategorization'
   | 'materials.textbook'
   | 'materials.supplementalMaterials'
   | 'courseInformation.catalogDescription'
@@ -21,12 +22,19 @@ export interface FieldMeta {
   evidence?: string;
 }
 
+export interface CreditsCategorization {
+  mathAndBasicSciences: string;
+  engineeringTopics: string;
+  other: string;
+}
+
 export interface CourseIdentity {
   department: string;
   courseNumber: string;
   courseTitle: string;
   instructorName: string;
   creditsText: string;
+  creditsCategorization: CreditsCategorization;
 }
 
 export interface Materials {

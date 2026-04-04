@@ -11,11 +11,25 @@ import {
   supplementalMaterialsRule,
   textbookRule,
 } from './rules';
-import type { LearningOutcome, SyllabusDraft, Topic } from '../../types/schema';
+import type {
+  CreditsCategorization,
+  LearningOutcome,
+  SyllabusDraft,
+  Topic,
+} from '../../types/schema';
 
 const SIMPLE_SECTION_STOP_PATTERNS = [
   /^[A-Z]\.\s+/,
   /^\d+\.\s+/,
+];
+const GENERIC_SECTION_STOP_PATTERNS = [
+  /^[A-Z]\s*\.\s+/,
+  /^\d+\s*\.\s+/,
+];
+const CREDIT_SECTION_STOP_PATTERNS = [
+  ...GENERIC_SECTION_STOP_PATTERNS,
+  /^Area Credit Hours\b/i,
+  /^Subject Area Credit Hours\b/i,
 ];
 const FIELD_LABEL_STOP_PATTERNS = [
   ...SIMPLE_SECTION_STOP_PATTERNS,
@@ -59,7 +73,7 @@ function normalizeValue(value: string): string {
 }
 
 function sanitizeFieldValue(label: string, value: string): string {
-  if (label.toLowerCase() === 'course instructor/coordinator') {
+  if (label.toLowerCase().startsWith('course instructor')) {
     return normalizeValue(value.replace(/\s+Signature:.*$/i, ''));
   }
 
@@ -195,6 +209,195 @@ function extractSupplementalMaterials(lines: readonly string[]): string {
   return normalizeValue(sections.join(' ; '));
 }
 
+function extractAreaCreditHoursSection(lines: readonly string[]): string {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (!/^(?:\d+\s*\.\s*)?(?:Subject Area Credit Hours|Area Credit Hours)\b/i.test(line)) {
+      continue;
+    }
+
+    const collected: string[] = [];
+    for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
+      const nextLine = lines[cursor];
+      if (matchesStopPattern(nextLine, GENERIC_SECTION_STOP_PATTERNS)) {
+        break;
+      }
+
+      collected.push(nextLine);
+    }
+
+    return normalizeValue(collected.join(' '));
+  }
+
+  return '';
+}
+
+function parseDelimitedCells(line: string): string[] {
+  if (!line.includes('|||')) {
+    return [];
+  }
+
+  return line.split(/\s*\|\|\|\s*/).map((cell) => normalizeValue(cell));
+}
+
+function isCreditsCategoryLabel(value: string): boolean {
+  return (
+    /engineering\s*\/\s*computer\s*science/i.test(value) ||
+    /mathematics\s*\/\s*science/i.test(value) ||
+    /^business$/i.test(value) ||
+    /general education/i.test(value) ||
+    /^other$/i.test(value)
+  );
+}
+
+function extractDelimitedCreditsCategorization(lines: readonly string[]): CreditsCategorization | null {
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!/^(?:\d+\s*\.\s*)?(?:Subject Area Credit Hours|Area Credit Hours)\b/i.test(lines[index])) {
+      continue;
+    }
+
+    for (let cursor = index + 1; cursor < Math.min(lines.length, index + 8); cursor += 1) {
+      const labelCells = parseDelimitedCells(lines[cursor]);
+      if (labelCells.length < 5 || !labelCells.some(isCreditsCategoryLabel)) {
+        continue;
+      }
+
+      let valueCells: string[] = [];
+      for (
+        let valueCursor = cursor + 1;
+        valueCursor < Math.min(lines.length, cursor + 7);
+        valueCursor += 1
+      ) {
+        valueCells = parseDelimitedCells(lines[valueCursor]);
+        if (valueCells.length >= labelCells.length) {
+          break;
+        }
+      }
+
+      if (valueCells.length < labelCells.length) {
+        continue;
+      }
+
+      const totals = createEmptyCreditsCategorization();
+      let hasAnyValue = false;
+
+      for (let cellIndex = 0; cellIndex < Math.min(labelCells.length, valueCells.length); cellIndex += 1) {
+        const label = labelCells[cellIndex];
+        const value = valueCells[cellIndex];
+
+        if (!/^\d+(?:\.\d+)?$/.test(value)) {
+          continue;
+        }
+
+        hasAnyValue = true;
+
+        if (/engineering\s*\/\s*computer\s*science/i.test(label)) {
+          totals.engineeringTopics = value;
+        } else if (/mathematics\s*\/\s*science/i.test(label)) {
+          totals.mathAndBasicSciences = value;
+        } else if (
+          /^business$/i.test(label) ||
+          /general education/i.test(label) ||
+          /^other$/i.test(label)
+        ) {
+          totals.other = formatCreditValue(
+            (totals.other ? Number.parseFloat(totals.other) : 0) + Number.parseFloat(value),
+          );
+        }
+      }
+
+      return finalizeCreditsCategorization(totals, hasAnyValue);
+    }
+  }
+
+  return null;
+}
+
+function createEmptyCreditsCategorization(): CreditsCategorization {
+  return {
+    mathAndBasicSciences: '',
+    engineeringTopics: '',
+    other: '',
+  };
+}
+
+function formatCreditValue(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(value);
+}
+
+function finalizeCreditsCategorization(
+  value: CreditsCategorization,
+  hasAnyValue: boolean,
+): CreditsCategorization {
+  if (!hasAnyValue) {
+    return createEmptyCreditsCategorization();
+  }
+
+  return {
+    mathAndBasicSciences: value.mathAndBasicSciences || '0',
+    engineeringTopics: value.engineeringTopics || '0',
+    other: value.other || '0',
+  };
+}
+
+function extractCreditsCategorization(lines: readonly string[]): CreditsCategorization {
+  const delimitedValues = extractDelimitedCreditsCategorization(lines);
+  if (delimitedValues) {
+    return delimitedValues;
+  }
+
+  const section = extractAreaCreditHoursSection(lines);
+  if (!section) {
+    return createEmptyCreditsCategorization();
+  }
+
+  const normalizedSection = section
+    .replace(/Engineering\s*\/\s*Computer\s*Science/gi, ' __ENG__ ')
+    .replace(/Mathematics\s*\/\s*Science/gi, ' __MATH__ ')
+    .replace(/General Education\s*\/\s*Social Sciences\s*\/\s*Humanities/gi, ' __OTHER__ ')
+    .replace(/Other Subject Areas/gi, ' __OTHER__ ')
+    .replace(/General Education/gi, ' __OTHER__ ')
+    .replace(/Social Sciences/gi, ' __OTHER__ ')
+    .replace(/Humanities/gi, ' __OTHER__ ')
+    .replace(/\bBusiness\b/gi, ' __OTHER__ ')
+    .replace(/\bOther\b/gi, ' __OTHER__ ');
+
+  const categories = normalizedSection.match(/__(?:ENG|MATH|OTHER)__/g) ?? [];
+  const values = (normalizedSection.match(/\b\d+(?:\.\d+)?\b/g) ?? []).map((value) =>
+    Number.parseFloat(value),
+  );
+  if (categories.length === 0 || values.length === 0) {
+    return createEmptyCreditsCategorization();
+  }
+
+  const totals = {
+    engineeringTopics: 0,
+    mathAndBasicSciences: 0,
+    other: 0,
+  };
+
+  for (let index = 0; index < Math.min(categories.length, values.length); index += 1) {
+    const value = values[index];
+    if (!Number.isFinite(value)) {
+      continue;
+    }
+
+    if (categories[index] === '__ENG__') {
+      totals.engineeringTopics += value;
+    } else if (categories[index] === '__MATH__') {
+      totals.mathAndBasicSciences += value;
+    } else {
+      totals.other += value;
+    }
+  }
+
+  return finalizeCreditsCategorization({
+    mathAndBasicSciences: formatCreditValue(totals.mathAndBasicSciences),
+    engineeringTopics: formatCreditValue(totals.engineeringTopics),
+    other: formatCreditValue(totals.other),
+  }, totals.mathAndBasicSciences > 0 || totals.engineeringTopics > 0 || totals.other > 0);
+}
+
 function isOutcomeSectionHeading(line: string, nextLine = ''): boolean {
   const combined = normalizeValue(`${line} ${nextLine}`);
   return /learning outcomes/i.test(combined) && /(plo|program-level)/i.test(combined);
@@ -204,9 +407,17 @@ function isOutcomeCode(line: string): boolean {
   return /^\d+\.\d+$/.test(line);
 }
 
+function isSyntheticDelimitedRow(line: string): boolean {
+  return line.includes('|||');
+}
+
 function parseOutcomeLine(
   line: string,
 ): { outcomeCode: string; inlineDescription: string } | null {
+  if (isSyntheticDelimitedRow(line)) {
+    return null;
+  }
+
   const exactCode = line.match(/^(?<code>\d+\.\d+)$/);
   if (exactCode?.groups) {
     return {
@@ -240,7 +451,7 @@ function isOutcomeNoise(line: string): boolean {
     ) ||
     /^\d+$/.test(line) ||
     /^\d+\.$/.test(line) ||
-    /^(?:K|S|V)\d+$/i.test(line) ||
+    /^(?:K|S|V)\s*\.?\s*\d+(?:\b|$)/i.test(line) ||
     /^(?:Lecture|Lectures|Homework|Exams?|Quizzes?|Assignments?|Project(?: Report)?|Class Discussion|Participating|Peer evaluations|Teamwork|Presentation|Report)\b/i.test(
       line,
     )
@@ -264,6 +475,10 @@ function extractLearningOutcomes(lines: readonly string[]): LearningOutcome[] {
       break;
     }
 
+     if (isSyntheticDelimitedRow(line)) {
+      continue;
+    }
+
     const outcomeLine = parseOutcomeLine(line);
     if (!outcomeLine) {
       continue;
@@ -278,6 +493,7 @@ function extractLearningOutcomes(lines: readonly string[]): LearningOutcome[] {
 
       if (
         parseOutcomeLine(nextLine) ||
+        isSyntheticDelimitedRow(nextLine) ||
         matchesStopPattern(nextLine, CLO_SECTION_STOP_PATTERNS) ||
         isOutcomeNoise(nextLine)
       ) {
@@ -306,8 +522,11 @@ function isTopicSectionHeading(line: string): boolean {
 }
 
 function isTopicNoise(line: string): boolean {
-  return /^(?:No|List of Topics|Topic|Contact Hours|Contact hours|Hours|Contact|Total)$/i.test(
-    line,
+  return (
+    /^(?:No|List of Topics|Topic|Contact Hours|Contact hours|Hours|Contact|Total)$/i.test(
+      line,
+    ) ||
+    isSyntheticDelimitedRow(line)
   );
 }
 
@@ -449,8 +668,9 @@ export function parseCourseSpec(text: string): SyllabusDraft {
   draft.courseIdentity.creditsText = extractSectionValue(
     lines,
     creditsRule.labels,
-    SIMPLE_SECTION_STOP_PATTERNS,
+    CREDIT_SECTION_STOP_PATTERNS,
   );
+  draft.courseIdentity.creditsCategorization = extractCreditsCategorization(lines);
   draft.courseInformation.catalogDescription = extractSectionValue(
     lines,
     catalogDescriptionRule.labels,

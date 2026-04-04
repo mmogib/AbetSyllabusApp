@@ -74,6 +74,26 @@ function createTable(rows: string[][], numberedCells: Record<number, number[]> =
   ].join('');
 }
 
+function getTopLevelRows(table: Element): Element[] {
+  return Array.from(table.getElementsByTagName('w:tr')).filter((row) => row.parentNode === table);
+}
+
+function getTopLevelCells(row: Element): Element[] {
+  return Array.from(row.getElementsByTagName('w:tc')).filter((cell) => cell.parentNode === row);
+}
+
+function readCellText(cell: Element | undefined): string {
+  if (!cell) {
+    return '';
+  }
+
+  return Array.from(cell.getElementsByTagName('w:t'))
+    .map((node) => node.textContent ?? '')
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 async function buildTemplateBuffer(): Promise<ArrayBuffer> {
   const documentXml = [
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
@@ -245,6 +265,41 @@ test('returns a DOCX blob with syllabus content in the template 2 layout', async
   expect(documentXml).toContain('Markov chains and simulation');
   expect(documentXml).not.toContain('MATH 208');
   expect(documentXml).not.toContain('Differential Equations and Linear Algebra');
+});
+
+test('marks the parsed credits categorization in the template 2 credits table', async () => {
+  const templateBytes = await buildTemplateBuffer();
+  const draft = createEmptyDraft();
+  draft.courseIdentity.courseNumber = 'DATA 201';
+  draft.courseIdentity.courseTitle = 'Probability for Data Science';
+  draft.courseIdentity.creditsText = '3-0-3';
+  draft.courseIdentity.creditsCategorization = {
+    mathAndBasicSciences: '0',
+    engineeringTopics: '3',
+    other: '0',
+  };
+
+  const bytes = await buildSyllabusDocxBytes({
+    draft,
+    templateBytes,
+    parseXml: (xml) => new DOMParser().parseFromString(xml, 'application/xml'),
+    serializeXml: (document) => new XMLSerializer().serializeToString(document),
+  });
+
+  const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const zip = await JSZip.loadAsync(buffer);
+  const documentXml = await zip.file('word/document.xml')?.async('string');
+  const document = new DOMParser().parseFromString(documentXml ?? '', 'application/xml');
+  const body = document.getElementsByTagName('w:body')[0];
+  const tables = Array.from(document.getElementsByTagName('w:tbl')).filter(
+    (table) => table.parentNode === body,
+  );
+  const creditRows = getTopLevelRows(tables[2]);
+  const categorizationCells = getTopLevelCells(creditRows[4]);
+
+  expect(readCellText(categorizationCells[1])).toBe('0');
+  expect(readCellText(categorizationCells[2])).toBe('3');
+  expect(readCellText(categorizationCells[3])).toBe('0');
 });
 
 test('does not duplicate topic numbering when template 2 already numbers topic paragraphs', async () => {

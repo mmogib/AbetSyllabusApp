@@ -15,7 +15,7 @@ export const departmentRule: ParsedFieldRule = {
 };
 
 export const instructorRule: ParsedFieldRule = {
-  labels: ['Course Instructor/Coordinator'],
+  labels: ['Course Instructor/Coordinator', 'Course Instructor'],
 };
 
 export const catalogDescriptionRule: ParsedFieldRule = {

@@ -18,6 +18,7 @@ const FIELD_PATHS: readonly FieldPath[] = [
   'courseIdentity.courseTitle',
   'courseIdentity.instructorName',
   'courseIdentity.creditsText',
+  'courseIdentity.creditsCategorization',
   'materials.textbook',
   'materials.supplementalMaterials',
   'courseInformation.catalogDescription',
@@ -37,6 +38,101 @@ function asString(value: unknown, label: string): string {
   }
 
   return value;
+}
+
+function formatCreditValue(value: string): string {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) {
+    return '';
+  }
+
+  return Number.isInteger(parsed) ? String(parsed) : String(parsed);
+}
+
+function parseCreditTotal(creditsText: string): string {
+  const match = creditsText.match(
+    /^(?<lecture>\d+(?:\.\d+)?)\s*-\s*(?<lab>\d+(?:\.\d+)?)\s*-\s*(?<credit>\d+(?:\.\d+)?)$/,
+  );
+  if (!match?.groups?.credit) {
+    return '';
+  }
+
+  return formatCreditValue(match.groups.credit);
+}
+
+function parseLegacyCreditsCategorization(
+  value: string,
+  creditsText: string,
+): SyllabusDraft['courseIdentity']['creditsCategorization'] {
+  const totalCredits = parseCreditTotal(creditsText);
+  if (!totalCredits) {
+    return createEmptyDraft().courseIdentity.creditsCategorization;
+  }
+
+  const normalizedValue = value.toLowerCase();
+
+  if (
+    normalizedValue.includes('math and basic sciences') ||
+    normalizedValue.includes('mathematics/science') ||
+    normalizedValue.includes('mathematics / science')
+  ) {
+    return {
+      mathAndBasicSciences: totalCredits,
+      engineeringTopics: '0',
+      other: '0',
+    };
+  }
+
+  if (
+    normalizedValue.includes('engineering topics') ||
+    normalizedValue.includes('engineering/computer science') ||
+    normalizedValue.includes('engineering / computer science')
+  ) {
+    return {
+      mathAndBasicSciences: '0',
+      engineeringTopics: totalCredits,
+      other: '0',
+    };
+  }
+
+  if (normalizedValue.includes('other')) {
+    return {
+      mathAndBasicSciences: '0',
+      engineeringTopics: '0',
+      other: totalCredits,
+    };
+  }
+
+  return createEmptyDraft().courseIdentity.creditsCategorization;
+}
+
+function parseCreditsCategorization(
+  value: unknown,
+  creditsText: string,
+): SyllabusDraft['courseIdentity']['creditsCategorization'] {
+  if (isRecord(value)) {
+    return {
+      mathAndBasicSciences: asString(
+        value.mathAndBasicSciences ?? '',
+        'courseIdentity.creditsCategorization.mathAndBasicSciences',
+      ),
+      engineeringTopics: asString(
+        value.engineeringTopics ?? '',
+        'courseIdentity.creditsCategorization.engineeringTopics',
+      ),
+      other: asString(value.other ?? '', 'courseIdentity.creditsCategorization.other'),
+    };
+  }
+
+  if (typeof value === 'string' && value.trim() !== '') {
+    return parseLegacyCreditsCategorization(value, creditsText);
+  }
+
+  if (value === undefined) {
+    return createEmptyDraft().courseIdentity.creditsCategorization;
+  }
+
+  throw new Error('Invalid project JSON: courseIdentity.creditsCategorization must be an object.');
 }
 
 function isAllowedFieldPath(path: string): path is FieldPath {
@@ -116,6 +212,10 @@ function parseDraft(value: unknown): SyllabusDraft {
   draft.courseIdentity.courseTitle = asString(value.courseIdentity.courseTitle, 'courseIdentity.courseTitle');
   draft.courseIdentity.instructorName = asString(value.courseIdentity.instructorName, 'courseIdentity.instructorName');
   draft.courseIdentity.creditsText = asString(value.courseIdentity.creditsText, 'courseIdentity.creditsText');
+  draft.courseIdentity.creditsCategorization = parseCreditsCategorization(
+    value.courseIdentity.creditsCategorization,
+    draft.courseIdentity.creditsText,
+  );
 
   draft.materials.textbook = asString(value.materials.textbook, 'materials.textbook');
   draft.materials.supplementalMaterials = asString(

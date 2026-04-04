@@ -70,3 +70,37 @@ test('extracts paragraph text directly from document xml with an injected parser
     ['Course Title: Probability for Data Science', 'Course Code: DATA 201'].join('\n'),
   );
 });
+
+test('preserves sparse table row positions with a synthetic delimited row line', () => {
+  const text = extractDocxTextFromDocumentXml(
+    [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">',
+      '<w:body>',
+      '<w:tbl>',
+      '<w:tr>',
+      '<w:tc><w:p><w:r><w:t>Engineering/Computer Science</w:t></w:r></w:p></w:tc>',
+      '<w:tc><w:p><w:r><w:t>Mathematics/ Science</w:t></w:r></w:p></w:tc>',
+      '<w:tc><w:p><w:r><w:t>Business</w:t></w:r></w:p></w:tc>',
+      '<w:tc><w:p><w:r><w:t>General Education / Social Sciences / Humanities</w:t></w:r></w:p></w:tc>',
+      '<w:tc><w:p><w:r><w:t>Other</w:t></w:r></w:p></w:tc>',
+      '</w:tr>',
+      '<w:tr>',
+      '<w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc>',
+      '<w:tc><w:p><w:r><w:t>4</w:t></w:r></w:p></w:tc>',
+      '<w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc>',
+      '<w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc>',
+      '<w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc>',
+      '</w:tr>',
+      '</w:tbl>',
+      '</w:body>',
+      '</w:document>',
+    ].join(''),
+    new DOMParser(),
+  );
+
+  expect(text).toContain(
+    'Engineering/Computer Science ||| Mathematics/ Science ||| Business ||| General Education / Social Sciences / Humanities ||| Other',
+  );
+  expect(text).toContain('||| 4 |||');
+});
